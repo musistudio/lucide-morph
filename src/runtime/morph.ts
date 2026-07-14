@@ -171,7 +171,7 @@ export function renderMorphIconSvg(
   }: MorphIconSvgOptions = {},
 ) {
   const frames = getMorphIconFrames(asset, position)
-  const center = getViewBoxCenter(asset.viewBox)
+  const center = asset.loading?.rotationCenter ?? getViewBoxCenter(asset.viewBox)
   const loadingMorph = loading && hasLoadingMorph(asset) && asset.loading
   const titleMarkup = title ? `<title>${escapeHtml(title)}</title>` : ""
   const animationMarkup = loadingMorph

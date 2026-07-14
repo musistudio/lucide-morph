@@ -557,7 +557,7 @@ function MorphPresetCard({
   return (
     <article
       className={cn(
-        "group relative aspect-[1/1.08] min-h-44 rounded-lg border bg-white text-center transition-all duration-200",
+        "preview-card group relative aspect-[1/1.08] min-h-44 rounded-lg border bg-white text-center transition-all duration-200",
         active
           ? "border-[#FF5B00] shadow-[0_18px_50px_rgba(255,91,0,0.18)]"
           : "border-zinc-100 hover:-translate-y-0.5 hover:border-zinc-200 hover:shadow-[0_18px_45px_rgba(24,24,27,0.08)]",
@@ -575,7 +575,7 @@ function MorphPresetCard({
         variant="ghost"
         size="iconSm"
         onClick={onCopyCode}
-        className="absolute right-2 top-2 z-10 h-8 w-8 border border-zinc-100 bg-white/85 opacity-90 shadow-sm backdrop-blur hover:bg-white hover:opacity-100"
+        className="preview-copy-button absolute right-2 top-2 z-10 h-8 w-8 border border-zinc-100 bg-white/85 shadow-sm backdrop-blur hover:bg-white"
         aria-label={`Copy ${asset.name} code`}
       >
         {copied ? (

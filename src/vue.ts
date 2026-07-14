@@ -130,7 +130,7 @@ export const MorphIcon = defineComponent({
     return () => {
       const asset = resolvedAsset.value
       const loading = resolvedState.value === "loading" && hasLoadingMorph(asset)
-      const center = getViewBoxCenter(asset.viewBox)
+      const center = asset.loading?.rotationCenter ?? getViewBoxCenter(asset.viewBox)
       const frames = getMorphIconFrames(asset, position.value)
       const paths = frames.map((frameItem) => {
         if (frameItem.mode === "fill" && !asset.strokeLocked) {

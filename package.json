@@ -1,6 +1,6 @@
 {
-  "name": "lucide-morph",
-  "version": "0.1.0",
+  "name": "@musistudio/lucide-morph",
+  "version": "1.0.0",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

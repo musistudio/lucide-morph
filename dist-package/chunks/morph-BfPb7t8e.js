@@ -33,20 +33,20 @@ function s(e, t, n, i, s, c, l) {
 		let e = Math.sqrt(y);
 		u *= e, d *= e;
 	}
-	let b = u * u * d * d - u * u * v * v - d * d * _ * _, x = u * u * v * v + d * d * _ * _, S = x === 0 ? 0 : (!!s == !!c ? -1 : 1) * Math.sqrt(Math.max(0, b / x)), C = S * u * v / d, w = -S * d * _ / u, T = {
-		x: p * C - m * w + (e.x + l.x) / 2,
-		y: m * C + p * w + (e.y + l.y) / 2
+	let ee = u * u * d * d - u * u * v * v - d * d * _ * _, b = u * u * v * v + d * d * _ * _, x = b === 0 ? 0 : (!!s == !!c ? -1 : 1) * Math.sqrt(Math.max(0, ee / b)), S = x * u * v / d, C = -x * d * _ / u, w = {
+		x: p * S - m * C + (e.x + l.x) / 2,
+		y: m * S + p * C + (e.y + l.y) / 2
+	}, T = {
+		x: (_ - S) / u,
+		y: (v - C) / d
 	}, E = {
-		x: (_ - C) / u,
-		y: (v - w) / d
-	}, ee = {
-		x: (-_ - C) / u,
-		y: (-v - w) / d
-	}, te = o(1, 0, E.x, E.y), D = o(E.x, E.y, ee.x, ee.y);
+		x: (-_ - S) / u,
+		y: (-v - C) / d
+	}, te = o(1, 0, T.x, T.y), D = o(T.x, T.y, E.x, E.y);
 	!c && D > 0 && (D -= Math.PI * 2), c && D < 0 && (D += Math.PI * 2);
 	let O = Math.max(1, Math.ceil(Math.abs(D) / (Math.PI / 2))), k = D / O, A = (e) => ({
-		x: T.x + u * p * Math.cos(e) - d * m * Math.sin(e),
-		y: T.y + u * m * Math.cos(e) + d * p * Math.sin(e)
+		x: w.x + u * p * Math.cos(e) - d * m * Math.sin(e),
+		y: w.y + u * m * Math.cos(e) + d * p * Math.sin(e)
 	}), j = (e) => ({
 		x: -u * p * Math.sin(e) - d * m * Math.cos(e),
 		y: -u * m * Math.sin(e) + d * p * Math.cos(e)
@@ -200,11 +200,11 @@ function g(e, t, n, r, i = 1, a = 1) {
 		mode: "stroke"
 	};
 }
-var _ = h(), v = m(_, _), y = l("M20 6 9 17l-5-5"), b = l("m6 6 12 12"), x = l("M18 6 6 18"), S = l("M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"), C = l("M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"), w = l("M14.084 14.158a3 3 0 0 1-4.242-4.242"), T = l("M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"), E = l("M10.268 21a2 2 0 0 0 3.464 0"), ee = l("M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"), te = l("M17 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 .258-1.742"), D = l("M8.668 3.01A6 6 0 0 1 18 8c0 2.687.77 4.653 1.707 6.05"), O = l("M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"), k = l("M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"), A = l("M19 10v2a7 7 0 0 1-14 0v-2"), j = l("M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"), ne = l("M16.5 16.5 12 21l-7-7c-1.5-1.45-3-3.2-3-5.5a5.5 5.5 0 0 1 2.14-4.35"), re = l("M8.76 3.1c1.15.22 2.13.78 3.24 1.9 1.5-1.5 2.74-2 4.5-2A5.5 5.5 0 0 1 22 8.5c0 2.12-1.3 3.78-2.67 5.17"), ie = l("M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"), ae = l("M8.34 8.34 2 9.27l5 4.87L5.82 21 12 17.77 18.18 21l-.59-3.43"), oe = l("M18.42 12.76 22 9.27l-6.91-1L12 2l-1.44 2.91"), se = l("m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"), ce = l("m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z"), le = l("M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"), ue = d(12, 12, 4), de = l("M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"), M = l("M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"), fe = l("m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"), N = l("M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"), P = l("M14 2v4a2 2 0 0 0 2 2h4"), pe = {
+var _ = h(), v = m(_, _), y = l("M20 6 9 17l-5-5"), ee = l("m6 6 12 12"), b = l("M18 6 6 18"), x = l("M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"), S = l("M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"), C = l("M14.084 14.158a3 3 0 0 1-4.242-4.242"), w = l("M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"), T = l("M10.268 21a2 2 0 0 0 3.464 0"), E = l("M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"), te = l("M17 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 .258-1.742"), D = l("M8.668 3.01A6 6 0 0 1 18 8c0 2.687.77 4.653 1.707 6.05"), O = l("M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"), k = l("M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"), A = l("M19 10v2a7 7 0 0 1-14 0v-2"), j = l("M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"), ne = l("M16.5 16.5 12 21l-7-7c-1.5-1.45-3-3.2-3-5.5a5.5 5.5 0 0 1 2.14-4.35"), re = l("M8.76 3.1c1.15.22 2.13.78 3.24 1.9 1.5-1.5 2.74-2 4.5-2A5.5 5.5 0 0 1 22 8.5c0 2.12-1.3 3.78-2.67 5.17"), ie = l("M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"), ae = l("M8.34 8.34 2 9.27l5 4.87L5.82 21 12 17.77 18.18 21l-.59-3.43"), oe = l("M18.42 12.76 22 9.27l-6.91-1L12 2l-1.44 2.91"), se = l("m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"), ce = l("m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z"), le = l("M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"), ue = d(12, 12, 4), de = l("M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"), fe = l("M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"), pe = l("m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"), M = l("M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"), N = l("M14 2v4a2 2 0 0 0 2 2h4"), me = {
 	"menu-x": [
-		g("menu-top", "Top rail", u(4, 6, 20, 6), b),
+		g("menu-top", "Top rail", u(4, 6, 20, 6), ee),
 		g("menu-middle", "Middle rail", u(4, 12, 20, 12), _, 1, 0),
-		g("menu-bottom", "Bottom rail", u(4, 18, 20, 18), x)
+		g("menu-bottom", "Bottom rail", u(4, 18, 20, 18), b)
 	],
 	"play-pause": [g("play-left", "Play outline to left bar", p("6 3 20 12 6 21 6 3"), f(6, 4, 4, 16, 1)), g("play-right", "Right pause bar", h(14, 4), f(14, 4, 4, 16, 1), 0, 1)],
 	"plus-check": [g("plus-horizontal", "Plus to check", l("M5 12h14"), y), g("plus-vertical", "Retracting arm", l("M12 5v14"), h(9, 17), 1, 0)],
@@ -213,16 +213,16 @@ var _ = h(), v = m(_, _), y = l("M20 6 9 17l-5-5"), b = l("m6 6 12 12"), x = l("
 		g("arrow-left", "Arrow head", l("m19 12-7 7-7-7"), l("m5 12 7-7 7 7")),
 		g("arrow-right", "Loading sweep", _, _, 0, 0)
 	],
-	"search-x": [g("search-ring", "Lens to slash", d(11, 11, 8), b), g("search-handle", "Handle to second slash", l("m21 21-4.3-4.3"), x)],
+	"search-x": [g("search-ring", "Lens to slash", d(11, 11, 8), ee), g("search-handle", "Handle to second slash", l("m21 21-4.3-4.3"), b)],
 	"eye-eye-off": [
-		g("eye-outline", "Eye upper outline", S, C),
-		g("eye-pupil", "Pupil", d(12, 12, 3), w),
-		g("eye-lower-outline", "Eye lower outline", h(17.479, 17.499), T, 0, 1),
+		g("eye-outline", "Eye upper outline", x, S),
+		g("eye-pupil", "Pupil", d(12, 12, 3), C),
+		g("eye-lower-outline", "Eye lower outline", h(17.479, 17.499), w, 0, 1),
 		g("eye-slash", "Slash", h(2, 2), u(2, 2, 22, 22), 0, 1)
 	],
 	"bell-bell-off": [
-		g("bell-body", "Bell body", ee, te),
-		g("bell-clapper", "Clapper", E, E),
+		g("bell-body", "Bell body", E, te),
+		g("bell-clapper", "Clapper", T, T),
 		g("bell-upper", "Bell upper outline", h(8.668, 3.01), D, 0, 1),
 		g("bell-slash", "Slash", h(2, 2), u(2, 2, 22, 22), 0, 1)
 	],
@@ -276,10 +276,10 @@ var _ = h(), v = m(_, _), y = l("M20 6 9 17l-5-5"), b = l("m6 6 12 12"), x = l("
 		g("sun-ray-diagonal-a", "Diagonal rays A", m(l("m4.93 4.93 1.41 1.41"), l("m17.66 17.66 1.41 1.41")), v, 1, 0),
 		g("sun-ray-diagonal-b", "Diagonal rays B", m(l("m6.34 17.66-1.41 1.41"), l("m19.07 4.93-1.41 1.41")), v, 1, 0)
 	],
-	"folder-folder-open": [g("folder-tab", "Loading sweep", _, _, 0, 0), g("folder-body", "Folder", M, fe)],
+	"folder-folder-open": [g("folder-tab", "Loading sweep", _, _, 0, 0), g("folder-body", "Folder", fe, pe)],
 	"file-file-check": [
-		g("file-outline", "File outline", N, N),
-		g("file-fold", "File fold", P, P),
+		g("file-outline", "File outline", M, M),
+		g("file-fold", "File fold", N, N),
 		g("file-check-short", "Check", h(9, 15), l("m9 15 2 2 4-4"), 0, 1),
 		g("file-check-long", "Loading sweep", _, _, 0, 0)
 	],
@@ -481,13 +481,13 @@ var _ = h(), v = m(_, _), y = l("M20 6 9 17l-5-5"), b = l("m6 6 12 12"), x = l("
 		g("bookmark-action-secondary", "Retracting add arm", u(12, 7, 12, 13), h(11, 12), 1, 0)
 	],
 	"folder-plus-check": [
-		g("folder-action-frame", "Folder frame", M, M),
+		g("folder-action-frame", "Folder frame", fe, fe),
 		g("folder-action-primary", "Add to ready", l("M9 13h6"), l("m9 13 2 2 4-4")),
 		g("folder-action-secondary", "Retracting add arm", l("M12 10v6"), h(11, 15), 1, 0)
 	],
 	"file-plus-check": [
-		g("file-action-outline", "File outline", N, N),
-		g("file-action-fold", "File fold", P, P),
+		g("file-action-outline", "File outline", M, M),
+		g("file-action-fold", "File fold", N, N),
 		g("file-action-primary", "Add to ready", l("M9 15h6"), l("m9 15 2 2 4-4")),
 		g("file-action-secondary", "Retracting add arm", l("M12 18v-6"), h(11, 17), 1, 0)
 	],
@@ -599,8 +599,8 @@ var _ = h(), v = m(_, _), y = l("M20 6 9 17l-5-5"), b = l("m6 6 12 12"), x = l("
 		g("circle-media-secondary", "Retracting pause bar", u(14, 15, 14, 9), h(10, 12), 1, 0)
 	]
 };
-function me(e) {
-	let t = pe[e.id];
+function he(e) {
+	let t = me[e.id];
 	if (!t) throw Error(`Missing Lucide endpoint design for ${e.id}.`);
 	return {
 		...e,
@@ -609,7 +609,7 @@ function me(e) {
 }
 //#endregion
 //#region src/morph/presetScenes.ts
-var he = /[MLCZ]|-?\d*\.?\d+(?:e[-+]?\d+)?/g, ge = /^[MLCZ]$/, _e = 12, F = 9;
+var ge = /[MLCZ]|-?\d*\.?\d+(?:e[-+]?\d+)?/g, _e = /^[MLCZ]$/, P = 12, F = 9;
 function I(e, t, n) {
 	return {
 		x: e.x + (t.x - e.x) * n,
@@ -647,11 +647,11 @@ function be(e, t) {
 	return n.push(r), n;
 }
 function L(e) {
-	let t = e.replace(he, "").replace(/[\s,]+/g, "");
+	let t = e.replace(ge, "").replace(/[\s,]+/g, "");
 	if (t) throw Error(`Unsupported SVG path syntax: ${t}`);
-	let n = e.match(he) ?? [], r = [], i = 0, a, o, s = () => {
+	let n = e.match(ge) ?? [], r = [], i = 0, a, o, s = () => {
 		let e = n[i];
-		if (e === void 0 || ge.test(e)) throw Error("Invalid SVG path number sequence.");
+		if (e === void 0 || _e.test(e)) throw Error("Invalid SVG path number sequence.");
 		return i += 1, Number(e);
 	}, c = () => ({
 		x: s(),
@@ -659,7 +659,7 @@ function L(e) {
 	});
 	for (; i < n.length;) {
 		let e = n[i];
-		if (i += 1, !ge.test(e)) throw Error(`Expected an SVG path command, received ${e}.`);
+		if (i += 1, !_e.test(e)) throw Error(`Expected an SVG path command, received ${e}.`);
 		if (e === "M") {
 			a = c(), o = {
 				start: a,
@@ -723,8 +723,8 @@ function z(e) {
 }
 function B(e, t = F) {
 	return {
-		x: _e + Math.cos(e) * t,
-		y: _e + Math.sin(e) * t
+		x: P + Math.cos(e) * t,
+		y: P + Math.sin(e) * t
 	};
 }
 function Ce(e, t, n = F) {
@@ -749,11 +749,11 @@ function we(e, t, n, r = F) {
 	let i = V(e), a = (V(t) - i) / n;
 	return Array.from({ length: n }, (e, t) => Ce(i + a * t, i + a * (t + 1), r));
 }
-function H(e, t, n) {
-	let r = we(e, t, n);
+function H(e, t, n, r = F) {
+	let i = we(e, t, n, r);
 	return z([{
-		start: r[0].p0,
-		segments: r
+		start: i[0].p0,
+		segments: i
 	}]);
 }
 function U(e) {
@@ -774,701 +774,642 @@ function W(e, t) {
 	}]);
 }
 var G = B(V(288));
-function K(e, t, n = "clockwise", r = 900) {
-	let i = 288 / t.length;
+function K(e, t, n, r = "clockwise", i = 900, a = F) {
+	let o = 288 / t.length;
 	return {
 		label: e,
-		rotationDirection: n,
-		rotationDuration: r,
-		layers: Object.fromEntries(t.map((e, t) => {
-			let n = i * t, r = i * (t + 1);
+		rotationDirection: r,
+		rotationDuration: i,
+		layers: Object.fromEntries([...t.map((e, t) => {
+			let n = o * t, r = o * (t + 1);
 			return [e, {
-				loading: H(n, r, Math.max(1, Math.ceil((r - n) / 90))),
+				loading: H(n, r, Math.max(1, Math.ceil((r - n) / 90)), a),
 				loadingOpacity: 1
 			}];
-		}))
+		}), ...n.map((e) => [e, {
+			loading: W({
+				x: P,
+				y: P
+			}, 1),
+			loadingOpacity: 0
+		}])])
 	};
 }
 var Te = {
-	"menu-x": {
-		label: "Loading",
-		rotationDirection: "clockwise",
-		rotationDuration: 820,
-		layers: {
-			"menu-top": {
-				loading: H(0, 96, 2),
-				loadingOpacity: 1
-			},
-			"menu-middle": {
-				loading: H(96, 192, 2),
-				loadingOpacity: 1
-			},
-			"menu-bottom": {
-				loading: H(192, 288, 2),
-				loadingOpacity: 1
-			}
+	label: "Loading",
+	rotationDirection: "clockwise",
+	rotationDuration: 820,
+	layers: {
+		"menu-top": {
+			loading: H(0, 96, 2),
+			loadingOpacity: 1
+		},
+		"menu-middle": {
+			loading: H(96, 192, 2),
+			loadingOpacity: 1
+		},
+		"menu-bottom": {
+			loading: H(192, 288, 2),
+			loadingOpacity: 1
 		}
-	},
-	"play-pause": {
-		label: "Buffering",
-		rotationDirection: "clockwise",
-		rotationDuration: 900,
-		layers: {
-			"play-left": {
-				loading: H(0, 180, 3),
-				loadingOpacity: 1
-			},
-			"play-right": {
-				loading: H(180, 288, 2),
-				loadingOpacity: 1
-			}
+	}
+}, Ee = {
+	label: "Buffering",
+	rotationDirection: "clockwise",
+	rotationDuration: 900,
+	layers: {
+		"play-left": {
+			loading: H(0, 180, 3),
+			loadingOpacity: 1
+		},
+		"play-right": {
+			loading: H(180, 288, 2),
+			loadingOpacity: 1
 		}
-	},
-	"plus-check": {
-		label: "Saving",
-		rotationDirection: "clockwise",
-		rotationDuration: 860,
-		layers: {
-			"plus-horizontal": {
-				loading: H(0, 144, 2),
-				loadingOpacity: 1
-			},
-			"plus-vertical": {
-				loading: H(144, 288, 2),
-				loadingOpacity: 1
-			}
+	}
+}, De = {
+	label: "Saving",
+	rotationDirection: "clockwise",
+	rotationDuration: 860,
+	layers: {
+		"plus-horizontal": {
+			loading: H(0, 144, 2),
+			loadingOpacity: 1
+		},
+		"plus-vertical": {
+			loading: H(144, 288, 2),
+			loadingOpacity: 1
 		}
-	},
-	"arrow-down-up": {
-		label: "Transferring",
-		rotationDirection: "counterclockwise",
-		rotationDuration: 760,
-		layers: {
-			"arrow-shaft": {
-				loading: H(0, 144, 2),
-				loadingOpacity: 1
-			},
-			"arrow-left": {
-				loading: H(144, 216, 1),
-				loadingOpacity: 1
-			},
-			"arrow-right": {
-				loading: H(216, 288, 1),
-				loadingOpacity: 1
-			}
+	}
+}, Oe = {
+	label: "Transferring",
+	rotationDirection: "clockwise",
+	rotationDuration: 760,
+	layers: {
+		"arrow-shaft": {
+			loading: H(0, 144, 2),
+			loadingOpacity: 1
+		},
+		"arrow-left": {
+			loading: H(144, 216, 1),
+			loadingOpacity: 1
+		},
+		"arrow-right": {
+			loading: H(216, 288, 1),
+			loadingOpacity: 1
 		}
-	},
-	"search-x": {
-		label: "Searching",
-		rotationDirection: "clockwise",
-		rotationDuration: 900,
-		layers: {
-			"search-ring": {
-				loading: H(0, 288, 4),
-				loadingOpacity: 1
-			},
-			"search-handle": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			}
+	}
+}, ke = {
+	label: "Searching",
+	rotationDirection: "clockwise",
+	rotationDuration: 900,
+	layers: {
+		"search-ring": {
+			loading: H(0, 288, 4),
+			loadingOpacity: 1
+		},
+		"search-handle": {
+			loading: W(G, 1),
+			loadingOpacity: 0
 		}
-	},
-	"eye-eye-off": {
-		label: "Updating visibility",
-		rotationDirection: "clockwise",
-		rotationDuration: 1080,
-		layers: {
-			"eye-outline": {
-				loading: H(0, 288, 4),
-				loadingOpacity: 1
-			},
-			"eye-pupil": {
-				loading: W({
+	}
+}, Ae = {
+	label: "Updating visibility",
+	rotationDirection: "clockwise",
+	rotationDuration: 1080,
+	layers: {
+		"eye-outline": {
+			loading: H(0, 288, 4),
+			loadingOpacity: 1
+		},
+		"eye-pupil": {
+			loading: W({
+				x: 12,
+				y: 12
+			}, 4),
+			loadingOpacity: 0
+		},
+		"eye-lower-outline": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		},
+		"eye-slash": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		}
+	}
+}, je = {
+	label: "Updating notifications",
+	rotationDirection: "clockwise",
+	rotationDuration: 960,
+	layers: {
+		"bell-body": {
+			loading: H(0, 288, 5),
+			loadingOpacity: 1
+		},
+		"bell-clapper": {
+			loading: W({
+				x: 12,
+				y: 21
+			}, 1),
+			loadingOpacity: 0
+		},
+		"bell-upper": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		},
+		"bell-slash": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		}
+	}
+}, Me = {
+	label: "Updating audio",
+	rotationDirection: "clockwise",
+	rotationDuration: 780,
+	layers: {
+		"volume-speaker": {
+			loading: H(144, 288, 6),
+			loadingOpacity: 1
+		},
+		"volume-wave-upper": {
+			loading: H(0, 72, 2),
+			loadingOpacity: 1
+		},
+		"volume-wave-lower": {
+			loading: H(72, 144, 2),
+			loadingOpacity: 1
+		}
+	}
+}, Ne = {
+	label: "Updating microphone",
+	rotationDirection: "clockwise",
+	rotationDuration: 880,
+	layers: {
+		"mic-capsule": {
+			loading: H(0, 150, 6),
+			loadingOpacity: 1
+		},
+		"mic-capsule-lower": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		},
+		"mic-stand": {
+			loading: H(150, 240, 2),
+			loadingOpacity: 1
+		},
+		"mic-stand-upper": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		},
+		"mic-base": {
+			loading: H(240, 288, 2),
+			loadingOpacity: 1
+		},
+		"mic-slash": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		}
+	}
+}, Pe = {
+	label: "Updating access",
+	rotationDirection: "clockwise",
+	rotationDuration: 980,
+	layers: {
+		"lock-body": {
+			loading: H(120, 288, 4),
+			loadingOpacity: 1
+		},
+		"lock-shackle": {
+			loading: H(0, 120, 4),
+			loadingOpacity: 1
+		}
+	}
+}, Fe = {
+	label: "Updating favorite",
+	rotationDirection: "clockwise",
+	rotationDuration: 1040,
+	layers: {
+		"heart-body": {
+			loading: H(0, 288, 6),
+			loadingOpacity: 1
+		},
+		"heart-upper": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		},
+		"heart-slash": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		}
+	}
+}, Ie = {
+	label: "Updating star",
+	rotationDirection: "clockwise",
+	rotationDuration: 900,
+	layers: {
+		"star-body": {
+			loading: H(0, 288, 10),
+			loadingOpacity: 1
+		},
+		"star-upper": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		},
+		"star-slash": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		}
+	}
+}, Le = {
+	label: "Saving bookmark",
+	rotationDirection: "clockwise",
+	rotationDuration: 940,
+	layers: {
+		"bookmark-ribbon": {
+			loading: H(0, 288, 5),
+			loadingOpacity: 1
+		},
+		"bookmark-check-short": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		},
+		"bookmark-check-long": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		}
+	}
+}, Re = {
+	label: "Scheduling",
+	rotationDirection: "clockwise",
+	rotationDuration: 840,
+	layers: {
+		"calendar-frame": {
+			loading: H(0, 288, 4),
+			loadingOpacity: 1
+		},
+		"calendar-top-rule": {
+			loading: W({
+				x: 12,
+				y: 3
+			}, 1),
+			loadingOpacity: 0
+		},
+		"calendar-rings": {
+			loading: U([{
+				point: {
+					x: 21,
+					y: 12
+				},
+				segmentCount: 1
+			}, {
+				point: G,
+				segmentCount: 1
+			}]),
+			loadingOpacity: 0
+		},
+		"calendar-check-short": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		},
+		"calendar-check-long": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		}
+	}
+}, ze = {
+	label: "Sending",
+	rotationDirection: "clockwise",
+	rotationDuration: 720,
+	layers: {
+		"send-short-check": {
+			loading: H(0, 96, 2),
+			loadingOpacity: 1
+		},
+		"send-long-check": {
+			loading: H(96, 288, 3),
+			loadingOpacity: 1
+		}
+	}
+}, Be = {
+	label: "Applying filters",
+	rotationDirection: "clockwise",
+	rotationDuration: 820,
+	layers: {
+		"filter-top": {
+			loading: H(0, 96, 2),
+			loadingOpacity: 1
+		},
+		"filter-middle": {
+			loading: H(96, 192, 2),
+			loadingOpacity: 1
+		},
+		"filter-bottom": {
+			loading: H(192, 288, 2),
+			loadingOpacity: 1
+		}
+	}
+}, Ve = {
+	label: "Loading",
+	rotationDirection: "clockwise",
+	rotationDuration: 800,
+	layers: {
+		"chevron-left": {
+			loading: H(0, 144, 2),
+			loadingOpacity: 1
+		},
+		"chevron-right": {
+			loading: H(144, 288, 2),
+			loadingOpacity: 1
+		}
+	}
+}, He = {
+	label: "Switching theme",
+	rotationDirection: "clockwise",
+	rotationDuration: 1100,
+	layers: {
+		"sun-core": {
+			loading: H(0, 288, 5),
+			loadingOpacity: 1
+		},
+		"sun-ray-vertical": {
+			loading: U([{
+				point: {
 					x: 12,
 					y: 12
-				}, 4),
-				loadingOpacity: 0
-			},
-			"eye-lower-outline": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			},
-			"eye-slash": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			}
-		}
-	},
-	"bell-bell-off": {
-		label: "Updating notifications",
-		rotationDirection: "counterclockwise",
-		rotationDuration: 960,
-		layers: {
-			"bell-body": {
-				loading: H(0, 288, 5),
-				loadingOpacity: 1
-			},
-			"bell-clapper": {
-				loading: W({
+				},
+				segmentCount: 1
+			}, {
+				point: {
 					x: 12,
-					y: 21
-				}, 1),
-				loadingOpacity: 0
-			},
-			"bell-upper": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			},
-			"bell-slash": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			}
-		}
-	},
-	"volume-volume-x": {
-		label: "Updating audio",
-		rotationDirection: "clockwise",
-		rotationDuration: 780,
-		layers: {
-			"volume-speaker": {
-				loading: H(144, 288, 6),
-				loadingOpacity: 1
-			},
-			"volume-wave-upper": {
-				loading: H(0, 72, 2),
-				loadingOpacity: 1
-			},
-			"volume-wave-lower": {
-				loading: H(72, 144, 2),
-				loadingOpacity: 1
-			}
-		}
-	},
-	"mic-mic-off": {
-		label: "Updating microphone",
-		rotationDirection: "clockwise",
-		rotationDuration: 880,
-		layers: {
-			"mic-capsule": {
-				loading: H(0, 150, 6),
-				loadingOpacity: 1
-			},
-			"mic-capsule-lower": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			},
-			"mic-stand": {
-				loading: H(150, 240, 2),
-				loadingOpacity: 1
-			},
-			"mic-stand-upper": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			},
-			"mic-base": {
-				loading: H(240, 288, 2),
-				loadingOpacity: 1
-			},
-			"mic-slash": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			}
-		}
-	},
-	"lock-lock-open": {
-		label: "Updating access",
-		rotationDirection: "counterclockwise",
-		rotationDuration: 980,
-		layers: {
-			"lock-body": {
-				loading: H(120, 288, 4),
-				loadingOpacity: 1
-			},
-			"lock-shackle": {
-				loading: H(0, 120, 4),
-				loadingOpacity: 1
-			}
-		}
-	},
-	"heart-heart-off": {
-		label: "Updating favorite",
-		rotationDirection: "clockwise",
-		rotationDuration: 1040,
-		layers: {
-			"heart-body": {
-				loading: H(0, 288, 6),
-				loadingOpacity: 1
-			},
-			"heart-upper": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			},
-			"heart-slash": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			}
-		}
-	},
-	"star-star-off": {
-		label: "Updating star",
-		rotationDirection: "clockwise",
-		rotationDuration: 900,
-		layers: {
-			"star-body": {
-				loading: H(0, 288, 10),
-				loadingOpacity: 1
-			},
-			"star-upper": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			},
-			"star-slash": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			}
-		}
-	},
-	"bookmark-bookmark-check": {
-		label: "Saving bookmark",
-		rotationDirection: "clockwise",
-		rotationDuration: 940,
-		layers: {
-			"bookmark-ribbon": {
-				loading: H(0, 288, 5),
-				loadingOpacity: 1
-			},
-			"bookmark-check-short": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			},
-			"bookmark-check-long": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			}
-		}
-	},
-	"calendar-calendar-check": {
-		label: "Scheduling",
-		rotationDirection: "clockwise",
-		rotationDuration: 840,
-		layers: {
-			"calendar-frame": {
-				loading: H(0, 288, 4),
-				loadingOpacity: 1
-			},
-			"calendar-top-rule": {
-				loading: W({
+					y: 12
+				},
+				segmentCount: 1
+			}]),
+			loadingOpacity: 0
+		},
+		"sun-ray-horizontal": {
+			loading: U([{
+				point: {
 					x: 12,
-					y: 3
-				}, 1),
-				loadingOpacity: 0
-			},
-			"calendar-rings": {
-				loading: U([{
-					point: {
-						x: 21,
-						y: 12
-					},
-					segmentCount: 1
-				}, {
-					point: G,
-					segmentCount: 1
-				}]),
-				loadingOpacity: 0
-			},
-			"calendar-check-short": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			},
-			"calendar-check-long": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			}
+					y: 12
+				},
+				segmentCount: 1
+			}, {
+				point: {
+					x: 12,
+					y: 12
+				},
+				segmentCount: 1
+			}]),
+			loadingOpacity: 0
+		},
+		"sun-ray-diagonal-a": {
+			loading: U([{
+				point: {
+					x: 12,
+					y: 12
+				},
+				segmentCount: 1
+			}, {
+				point: {
+					x: 12,
+					y: 12
+				},
+				segmentCount: 1
+			}]),
+			loadingOpacity: 0
+		},
+		"sun-ray-diagonal-b": {
+			loading: U([{
+				point: {
+					x: 12,
+					y: 12
+				},
+				segmentCount: 1
+			}, {
+				point: {
+					x: 12,
+					y: 12
+				},
+				segmentCount: 1
+			}]),
+			loadingOpacity: 0
 		}
-	},
-	"send-check": {
-		label: "Sending",
-		rotationDirection: "clockwise",
-		rotationDuration: 720,
-		layers: {
-			"send-short-check": {
-				loading: H(0, 96, 2),
-				loadingOpacity: 1
-			},
-			"send-long-check": {
-				loading: H(96, 288, 3),
-				loadingOpacity: 1
-			}
+	}
+}, Ue = {
+	label: "Opening folder",
+	rotationDirection: "clockwise",
+	rotationDuration: 920,
+	layers: {
+		"folder-tab": {
+			loading: H(0, 120, 3),
+			loadingOpacity: 1
+		},
+		"folder-body": {
+			loading: H(120, 288, 3),
+			loadingOpacity: 1
 		}
-	},
-	"filter-list-filter": {
-		label: "Applying filters",
-		rotationDirection: "counterclockwise",
-		rotationDuration: 820,
-		layers: {
-			"filter-top": {
-				loading: H(0, 96, 2),
-				loadingOpacity: 1
-			},
-			"filter-middle": {
-				loading: H(96, 192, 2),
-				loadingOpacity: 1
-			},
-			"filter-bottom": {
-				loading: H(192, 288, 2),
-				loadingOpacity: 1
-			}
+	}
+}, We = {
+	label: "Checking file",
+	rotationDirection: "clockwise",
+	rotationDuration: 900,
+	layers: {
+		"file-outline": {
+			loading: H(0, 288, 5),
+			loadingOpacity: 1
+		},
+		"file-fold": {
+			loading: W(G, 2),
+			loadingOpacity: 0
+		},
+		"file-check-short": {
+			loading: W(G, 1),
+			loadingOpacity: 0
+		},
+		"file-check-long": {
+			loading: W(G, 1),
+			loadingOpacity: 0
 		}
+	}
+}, Ge = {
+	label: "Powering off",
+	rotationCenter: {
+		x: 12,
+		y: 13
 	},
-	"chevron-down-up": {
-		label: "Loading",
-		rotationDirection: "counterclockwise",
-		rotationDuration: 800,
-		layers: {
-			"chevron-left": {
-				loading: H(0, 144, 2),
-				loadingOpacity: 1
-			},
-			"chevron-right": {
-				loading: H(144, 288, 2),
-				loadingOpacity: 1
-			}
+	rotationDirection: "clockwise",
+	rotationDuration: 840,
+	layers: {
+		"power-off-lower": {
+			loading: (e) => e.from,
+			loadingOpacity: 1
+		},
+		"power-off-upper": {
+			loading: W({
+				x: P,
+				y: P
+			}, 1),
+			loadingOpacity: 0
+		},
+		"power-off-stem": {
+			loading: W({
+				x: P,
+				y: P
+			}, 1),
+			loadingOpacity: 0
+		},
+		"power-off-slash": {
+			loading: W({
+				x: P,
+				y: P
+			}, 1),
+			loadingOpacity: 0
 		}
-	},
-	"sun-moon": {
-		label: "Switching theme",
-		rotationDirection: "clockwise",
-		rotationDuration: 1100,
-		layers: {
-			"sun-core": {
-				loading: H(0, 288, 5),
-				loadingOpacity: 1
-			},
-			"sun-ray-vertical": {
-				loading: U([{
-					point: {
-						x: 12,
-						y: 12
-					},
-					segmentCount: 1
-				}, {
-					point: {
-						x: 12,
-						y: 12
-					},
-					segmentCount: 1
-				}]),
-				loadingOpacity: 0
-			},
-			"sun-ray-horizontal": {
-				loading: U([{
-					point: {
-						x: 12,
-						y: 12
-					},
-					segmentCount: 1
-				}, {
-					point: {
-						x: 12,
-						y: 12
-					},
-					segmentCount: 1
-				}]),
-				loadingOpacity: 0
-			},
-			"sun-ray-diagonal-a": {
-				loading: U([{
-					point: {
-						x: 12,
-						y: 12
-					},
-					segmentCount: 1
-				}, {
-					point: {
-						x: 12,
-						y: 12
-					},
-					segmentCount: 1
-				}]),
-				loadingOpacity: 0
-			},
-			"sun-ray-diagonal-b": {
-				loading: U([{
-					point: {
-						x: 12,
-						y: 12
-					},
-					segmentCount: 1
-				}, {
-					point: {
-						x: 12,
-						y: 12
-					},
-					segmentCount: 1
-				}]),
-				loadingOpacity: 0
-			}
-		}
-	},
-	"folder-folder-open": {
-		label: "Opening folder",
-		rotationDirection: "clockwise",
-		rotationDuration: 920,
-		layers: {
-			"folder-tab": {
-				loading: H(0, 120, 3),
-				loadingOpacity: 1
-			},
-			"folder-body": {
-				loading: H(120, 288, 3),
-				loadingOpacity: 1
-			}
-		}
-	},
-	"file-file-check": {
-		label: "Checking file",
-		rotationDirection: "clockwise",
-		rotationDuration: 900,
-		layers: {
-			"file-outline": {
-				loading: H(0, 288, 5),
-				loadingOpacity: 1
-			},
-			"file-fold": {
-				loading: W(G, 2),
-				loadingOpacity: 0
-			},
-			"file-check-short": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			},
-			"file-check-long": {
-				loading: W(G, 1),
-				loadingOpacity: 0
-			}
-		}
-	},
-	"collapse-sidebar-to-expand-inspector": K("Switching panel", [
-		"workspace-frame",
-		"workspace-divider",
-		"workspace-arrow"
-	], "clockwise", 840),
-	"maximize-minimize": K("Resizing view", [
-		"fullscreen-corner-a",
-		"fullscreen-corner-b",
-		"fullscreen-diagonal-a",
-		"fullscreen-diagonal-b"
-	], "clockwise", 780),
+	}
+}, Ke = {
+	"menu-x": Te,
+	"play-pause": Ee,
+	"plus-check": De,
+	"arrow-down-up": Oe,
+	"search-x": ke,
+	"eye-eye-off": Ae,
+	"bell-bell-off": je,
+	"volume-volume-x": Me,
+	"mic-mic-off": Ne,
+	"lock-lock-open": Pe,
+	"heart-heart-off": Fe,
+	"star-star-off": Ie,
+	"bookmark-bookmark-check": Le,
+	"calendar-calendar-check": Re,
+	"send-check": ze,
+	"filter-list-filter": Be,
+	"chevron-down-up": Ve,
+	"sun-moon": He,
+	"folder-folder-open": Ue,
+	"file-file-check": We,
+	"collapse-sidebar-to-expand-inspector": K("Switching panel", ["workspace-frame"], ["workspace-divider", "workspace-arrow"], "clockwise", 840),
+	"maximize-minimize": K("Resizing view", ["fullscreen-corner-a", "fullscreen-corner-b"], ["fullscreen-diagonal-a", "fullscreen-diagonal-b"], "clockwise", 780),
 	"layout-grid-list": K("Changing view", [
 		"view-item-a",
 		"view-item-b",
 		"view-item-c",
-		"view-item-d",
-		"view-item-e",
-		"view-item-f"
-	], "clockwise", 860),
-	"columns-rows": K("Rotating layout", ["layout-frame", "layout-divider"], "counterclockwise", 880),
-	"undo-redo": K("Updating history", ["history-arrow", "history-curve"], "counterclockwise", 760),
-	"rotate-ccw-cw": K("Changing direction", ["rotate-orbit", "rotate-corner"], "clockwise", 780),
-	"zoom-in-out": K("Updating zoom", [
-		"zoom-ring",
+		"view-item-d"
+	], ["view-item-e", "view-item-f"], "clockwise", 860),
+	"columns-rows": K("Rotating layout", ["layout-frame"], ["layout-divider"], "clockwise", 880),
+	"undo-redo": K("Updating history", ["history-curve"], ["history-arrow"], "clockwise", 760),
+	"rotate-ccw-cw": K("Changing direction", ["rotate-orbit"], ["rotate-corner"], "clockwise", 780),
+	"zoom-in-out": K("Updating zoom", ["zoom-ring"], [
 		"zoom-handle",
 		"zoom-horizontal",
 		"zoom-vertical"
-	], "clockwise", 820),
-	"pin-pin-off": K("Updating pin", [
+	], "clockwise", 820, 8),
+	"pin-pin-off": K("Updating pin", ["pin-body"], [
 		"pin-stem",
-		"pin-body",
 		"pin-upper",
 		"pin-slash"
-	], "counterclockwise", 900),
-	"link-unlink": K("Updating link", [
-		"link-upper",
-		"link-lower",
+	], "clockwise", 900),
+	"link-unlink": K("Updating link", ["link-upper", "link-lower"], [
 		"unlink-mark-a",
 		"unlink-mark-b",
 		"unlink-mark-c",
 		"unlink-mark-d"
 	], "clockwise", 860),
-	"cloud-download-upload": K("Transferring", [
-		"cloud-body",
-		"cloud-arrow-primary",
-		"cloud-arrow-secondary"
-	], "clockwise", 800),
-	"mail-mail-open": K("Opening mail", ["mail-frame", "mail-flap"], "clockwise", 900),
-	"user-plus-check": K("Adding user", [
+	"cloud-download-upload": K("Transferring", ["cloud-body"], ["cloud-arrow-primary", "cloud-arrow-secondary"], "clockwise", 800),
+	"mail-mail-open": K("Opening mail", ["mail-frame"], ["mail-flap"], "clockwise", 900),
+	"user-plus-check": K("Adding user", ["user-head"], [
 		"user-body",
-		"user-head",
 		"user-action-horizontal",
 		"user-action-vertical"
 	], "clockwise", 840),
-	"toggle-left-right": K("Updating toggle", ["toggle-track", "toggle-thumb"], "clockwise", 740),
+	"toggle-left-right": K("Updating toggle", ["toggle-thumb"], ["toggle-track"], "clockwise", 740),
 	"align-left-right": K("Aligning content", [
+		"align-top",
 		"align-middle",
-		"align-bottom",
-		"align-top"
-	], "counterclockwise", 760),
-	"image-image-off": K("Updating image", [
-		"image-frame-lower",
+		"align-bottom"
+	], [], "clockwise", 760),
+	"image-image-off": K("Updating image", ["image-frame-lower", "image-frame-upper"], [
 		"image-sun",
 		"image-mountain",
 		"image-ridge",
-		"image-frame-upper",
 		"image-slash"
 	], "clockwise", 940),
-	"wifi-wifi-off": K("Updating connection", [
+	"wifi-wifi-off": K("Updating connection", ["wifi-outer-left", "wifi-outer-right"], [
 		"wifi-dot",
 		"wifi-inner",
 		"wifi-middle-left",
-		"wifi-outer-left",
 		"wifi-middle-right",
-		"wifi-outer-right",
 		"wifi-slash"
-	], "counterclockwise", 880),
-	"circle-play-stop": K("Updating playback", ["media-circle", "media-control"], "clockwise", 780),
+	], "clockwise", 880),
+	"circle-play-stop": K("Updating playback", ["media-circle"], ["media-control"], "clockwise", 780, 10),
 	"archive-restore": K("Restoring archive", [
 		"archive-lid",
 		"archive-body-left",
-		"archive-body-right",
-		"archive-action",
-		"archive-shaft"
-	], "counterclockwise", 900),
-	"log-in-out": K("Updating session", [
-		"session-door",
-		"session-arrow",
-		"session-shaft"
-	], "clockwise", 820),
-	"copy-clipboard-check": K("Copying", [
-		"copy-front",
-		"copy-back",
-		"copy-check"
-	], "clockwise", 800),
-	"message-message-off": K("Updating messages", [
-		"message-lower",
-		"message-upper",
-		"message-slash"
-	], "counterclockwise", 920),
-	"battery-low-full": K("Charging battery", [
-		"battery-shell",
+		"archive-body-right"
+	], ["archive-action", "archive-shaft"], "clockwise", 900),
+	"log-in-out": K("Updating session", ["session-door"], ["session-arrow", "session-shaft"], "clockwise", 820),
+	"copy-clipboard-check": K("Copying", ["copy-front", "copy-back"], ["copy-check"], "clockwise", 800),
+	"message-message-off": K("Updating messages", ["message-lower", "message-upper"], ["message-slash"], "clockwise", 920),
+	"battery-low-full": K("Charging battery", ["battery-shell"], [
 		"battery-terminal",
 		"battery-cell-low",
 		"battery-cell-middle",
 		"battery-cell-full"
 	], "clockwise", 820),
-	"signal-low-high": K("Improving signal", [
-		"signal-origin",
+	"signal-low-high": K("Improving signal", ["signal-origin"], [
 		"signal-low-bar",
 		"signal-middle-bar",
 		"signal-high-bar"
 	], "clockwise", 780),
-	"volume-low-high": K("Raising volume", [
-		"volume-level-speaker",
-		"volume-level-inner",
-		"volume-level-outer"
-	], "clockwise", 760),
-	"shield-shield-check": K("Verifying", ["shield-outline", "shield-check"], "clockwise", 880),
-	"camera-camera-off": K("Updating camera", [
-		"camera-frame-lower",
-		"camera-frame-upper",
-		"camera-lens",
-		"camera-slash"
-	], "counterclockwise", 900),
-	"video-video-off": K("Updating video", [
-		"video-lens",
-		"video-body",
-		"video-slash"
-	], "counterclockwise", 860),
-	"bluetooth-bluetooth-off": K("Updating Bluetooth", [
-		"bluetooth-lower",
-		"bluetooth-upper",
-		"bluetooth-slash"
-	], "clockwise", 840),
-	"navigation-navigation-off": K("Updating navigation", [
-		"navigation-lower",
-		"navigation-upper",
-		"navigation-slash"
-	], "counterclockwise", 900),
-	"map-pin-map-pin-check": K("Confirming location", [
-		"location-pin",
-		"location-dot",
-		"location-check"
-	], "clockwise", 860),
-	"package-package-open": K("Opening package", [
+	"volume-low-high": K("Raising volume", ["volume-level-outer"], ["volume-level-speaker", "volume-level-inner"], "clockwise", 760),
+	"shield-shield-check": K("Verifying", ["shield-outline"], ["shield-check"], "clockwise", 880),
+	"camera-camera-off": K("Updating camera", ["camera-frame-lower", "camera-frame-upper"], ["camera-lens", "camera-slash"], "clockwise", 900),
+	"video-video-off": K("Updating video", ["video-body", "video-lens"], ["video-slash"], "clockwise", 860),
+	"bluetooth-bluetooth-off": K("Updating Bluetooth", ["bluetooth-lower", "bluetooth-upper"], ["bluetooth-slash"], "clockwise", 840),
+	"navigation-navigation-off": K("Updating navigation", ["navigation-lower", "navigation-upper"], ["navigation-slash"], "clockwise", 900),
+	"map-pin-map-pin-check": K("Confirming location", ["location-pin"], ["location-dot", "location-check"], "clockwise", 860),
+	"package-package-open": K("Opening package", ["package-shell"], [
 		"package-spine",
-		"package-shell",
 		"package-fold",
 		"package-flap"
 	], "clockwise", 940),
-	"door-closed-open": K("Opening door", [
-		"door-frame",
+	"door-closed-open": K("Opening door", ["door-frame"], [
 		"door-threshold-left",
 		"door-threshold-right",
 		"door-handle",
 		"door-panel"
 	], "clockwise", 920),
-	"panel-bottom-close-open": K("Updating panel", [
-		"bottom-panel-frame",
-		"bottom-panel-divider",
-		"bottom-panel-arrow"
-	], "clockwise", 800),
-	"circle-plus-check": K("Completing action", [
-		"circle-action-frame",
-		"circle-action-primary",
-		"circle-action-secondary"
-	], "clockwise", 780),
-	"circle-alert-check": K("Resolving alert", [
-		"circle-status-frame",
-		"circle-status-primary",
-		"circle-status-dot"
-	], "counterclockwise", 820),
-	"clipboard-clipboard-check": K("Checking clipboard", [
-		"clipboard-clip",
-		"clipboard-frame",
-		"clipboard-check"
-	], "clockwise", 820),
-	"calendar-plus-check": K("Confirming event", [
+	"panel-bottom-close-open": K("Updating panel", ["bottom-panel-frame"], ["bottom-panel-divider", "bottom-panel-arrow"], "clockwise", 800),
+	"circle-plus-check": K("Completing action", ["circle-action-frame"], ["circle-action-primary", "circle-action-secondary"], "clockwise", 780, 10),
+	"circle-alert-check": K("Resolving alert", ["circle-status-frame"], ["circle-status-primary", "circle-status-dot"], "clockwise", 820, 10),
+	"clipboard-clipboard-check": K("Checking clipboard", ["clipboard-frame"], ["clipboard-clip", "clipboard-check"], "clockwise", 820),
+	"calendar-plus-check": K("Confirming event", ["event-calendar-frame"], [
 		"event-calendar-left-ring",
 		"event-calendar-right-ring",
-		"event-calendar-frame",
 		"event-calendar-divider",
 		"event-calendar-action",
 		"event-calendar-add-arm"
 	], "clockwise", 900),
-	"user-plus-minus": K("Updating membership", [
+	"user-plus-minus": K("Updating membership", ["membership-head"], [
 		"membership-body",
-		"membership-head",
 		"membership-horizontal",
 		"membership-vertical"
-	], "counterclockwise", 820),
-	"bookmark-plus-check": K("Saving bookmark", [
-		"bookmark-action-ribbon",
-		"bookmark-action-primary",
-		"bookmark-action-secondary"
 	], "clockwise", 820),
-	"folder-plus-check": K("Creating folder", [
-		"folder-action-frame",
-		"folder-action-primary",
-		"folder-action-secondary"
-	], "clockwise", 860),
-	"file-plus-check": K("Creating file", [
-		"file-action-outline",
+	"bookmark-plus-check": K("Saving bookmark", ["bookmark-action-ribbon"], ["bookmark-action-primary", "bookmark-action-secondary"], "clockwise", 820),
+	"folder-plus-check": K("Creating folder", ["folder-action-frame"], ["folder-action-primary", "folder-action-secondary"], "clockwise", 860),
+	"file-plus-check": K("Creating file", ["file-action-outline"], [
 		"file-action-fold",
 		"file-action-primary",
 		"file-action-secondary"
 	], "clockwise", 860),
-	"cloud-cloud-off": K("Updating cloud", [
-		"cloud-status-lower",
-		"cloud-status-upper",
-		"cloud-status-slash"
-	], "counterclockwise", 900),
-	"monitor-play-stop": K("Updating playback", [
+	"cloud-cloud-off": K("Updating cloud", ["cloud-status-lower", "cloud-status-upper"], ["cloud-status-slash"], "clockwise", 900),
+	"monitor-play-stop": K("Updating playback", ["screen-frame"], [
 		"screen-control",
 		"screen-stand",
-		"screen-base",
-		"screen-frame"
+		"screen-base"
 	], "clockwise", 820),
-	"mouse-pointer-click": K("Clicking", [
-		"pointer-body",
+	"mouse-pointer-click": K("Clicking", ["pointer-body"], [
 		"pointer-ray-top-right",
 		"pointer-ray-left",
 		"pointer-ray-bottom-left",
@@ -1478,96 +1419,67 @@ var Te = {
 		"scanner-top-left",
 		"scanner-top-right",
 		"scanner-bottom-right",
-		"scanner-bottom-left",
-		"scanner-line"
-	], "clockwise", 820),
-	"printer-printer-check": K("Printing", [
-		"print-body",
-		"print-paper",
-		"print-output",
-		"print-check"
-	], "clockwise", 900),
-	"laptop-laptop-check": K("Verifying device", [
-		"device-frame",
-		"device-base",
-		"device-check"
-	], "clockwise", 840),
-	"receipt-receipt-text": K("Preparing receipt", [
-		"receipt-outline",
+		"scanner-bottom-left"
+	], ["scanner-line"], "clockwise", 820),
+	"printer-printer-check": K("Printing", ["print-body", "print-paper"], ["print-output", "print-check"], "clockwise", 900),
+	"laptop-laptop-check": K("Verifying device", ["device-frame"], ["device-base", "device-check"], "clockwise", 840),
+	"receipt-receipt-text": K("Preparing receipt", ["receipt-outline"], [
 		"receipt-content-primary",
 		"receipt-content-secondary",
 		"receipt-content-tertiary"
 	], "clockwise", 880),
 	"list-list-checks": K("Building checklist", [
-		"checklist-bottom-marker",
-		"checklist-top-marker",
-		"checklist-middle-marker",
 		"checklist-top-rail",
 		"checklist-middle-rail",
 		"checklist-bottom-rail"
+	], [
+		"checklist-top-marker",
+		"checklist-middle-marker",
+		"checklist-bottom-marker"
 	], "clockwise", 860),
-	"table-cells-merge-split": K("Updating table cells", [
-		"table-action-frame",
+	"table-cells-merge-split": K("Updating table cells", ["table-action-frame"], [
 		"table-action-top-divider",
 		"table-action-bottom-divider",
 		"table-action-lower-split",
 		"table-action-upper-split"
-	], "counterclockwise", 860),
-	"chart-bar-decrease-increase": K("Updating trend", [
-		"trend-frame",
+	], "clockwise", 860),
+	"chart-bar-decrease-increase": K("Updating trend", ["trend-frame"], [
 		"trend-middle-bar",
 		"trend-top-bar",
 		"trend-bottom-bar"
 	], "clockwise", 820),
-	"battery-charging-full": K("Finishing charge", [
-		"charge-shell-primary",
-		"charge-shell-secondary",
+	"battery-charging-full": K("Finishing charge", ["charge-shell-primary", "charge-shell-secondary"], [
 		"charge-bolt",
 		"charge-terminal",
 		"charge-final-cell"
 	], "clockwise", 840),
-	"square-plus-check": K("Completing action", [
-		"square-action-frame",
-		"square-action-primary",
-		"square-action-secondary"
-	], "clockwise", 780),
-	"mail-plus-check": K("Confirming mail", [
-		"mail-action-frame",
+	"square-plus-check": K("Completing action", ["square-action-frame"], ["square-action-primary", "square-action-secondary"], "clockwise", 780),
+	"mail-plus-check": K("Confirming mail", ["mail-action-frame"], [
 		"mail-action-flap",
 		"mail-action-primary",
 		"mail-action-secondary"
 	], "clockwise", 860),
-	"alarm-clock-plus-check": K("Confirming alarm", [
-		"alarm-action-face",
+	"alarm-clock-plus-check": K("Confirming alarm", ["alarm-action-face"], [
 		"alarm-action-left-bell",
 		"alarm-action-right-bell",
 		"alarm-action-left-foot",
 		"alarm-action-right-foot",
 		"alarm-action-primary",
 		"alarm-action-secondary"
-	], "clockwise", 900),
-	"timer-timer-reset": K("Resetting timer", [
+	], "clockwise", 900, 8),
+	"timer-timer-reset": K("Resetting timer", ["timer-reset-face"], [
 		"timer-reset-cap",
 		"timer-reset-hand",
-		"timer-reset-face",
 		"timer-reset-arrow"
-	], "counterclockwise", 860),
-	"power-power-off": K("Powering off", [
-		"power-off-stem",
-		"power-off-lower",
-		"power-off-upper",
-		"power-off-slash"
-	], "counterclockwise", 840),
-	"circle-pause-play": K("Updating playback", [
-		"circle-media-frame",
-		"circle-media-primary",
-		"circle-media-secondary"
-	], "clockwise", 780)
+	], "clockwise", 860, 8),
+	"power-power-off": Ge,
+	"circle-pause-play": K("Updating playback", ["circle-media-frame"], ["circle-media-primary", "circle-media-secondary"], "clockwise", 780, 10)
 };
-function Ee(e, t) {
+function qe(e, t) {
 	let n;
 	try {
-		n = Se(e.from, t.loading, e.to);
+		let r = typeof t.loading == "function" ? t.loading(e) : t.loading;
+		n = Se(e.from, r, e.to);
 	} catch (t) {
 		let n = t instanceof Error ? t.message : String(t);
 		throw Error(`${e.id}: ${n}`);
@@ -1578,13 +1490,13 @@ function Ee(e, t) {
 		loadingOpacity: t.loadingOpacity
 	};
 }
-function De(e) {
-	let t = Te[e.id];
+function Je(e) {
+	let t = Ke[e.id];
 	if (!t) throw Error(`Missing scene design for ${e.id}.`);
 	let n = e.layers.map((n) => {
 		let r = t.layers[n.id];
 		if (!r) throw Error(`Missing scene design for ${e.id}/${n.id}.`);
-		return Ee(n, r);
+		return qe(n, r);
 	});
 	if (Object.keys(t.layers).length !== n.length) throw Error(`Scene design for ${e.id} contains unknown layers.`);
 	return {
@@ -1592,6 +1504,7 @@ function De(e) {
 		loading: {
 			enabled: !0,
 			label: t.label,
+			rotationCenter: t.rotationCenter,
 			rotationDirection: t.rotationDirection,
 			rotationDuration: t.rotationDuration
 		},
@@ -2301,36 +2214,36 @@ var q = [
 		toIcon: "CirclePlay",
 		viewBox: "0 0 24 24"
 	}
-].map((e) => De(me({
+].map((e) => Je(he({
 	...e,
 	layers: []
-}))), Oe = {
+}))), Ye = {
 	"sidebar-inspector": "collapse-sidebar-to-expand-inspector",
 	"collapse-to-expand-sidebar": "collapse-sidebar-to-expand-inspector",
 	"collapse-to-expand-inspector": "collapse-sidebar-to-expand-inspector",
 	"panel-left-close-open": "collapse-sidebar-to-expand-inspector",
 	"panel-bottom-close-open": "collapse-sidebar-to-expand-inspector"
 };
-function ke(e) {
+function Xe(e) {
 	return JSON.parse(JSON.stringify(e));
 }
-function Ae(e) {
-	let t = Oe[e] ?? e;
+function Ze(e) {
+	let t = Ye[e] ?? e;
 	return q.find((e) => e.id === t) ?? q[0];
 }
 //#endregion
 //#region src/morph/path.ts
-var je = /-?\d*\.?\d+(?:e[-+]?\d+)?/gi;
-function Me(e) {
+var Qe = /-?\d*\.?\d+(?:e[-+]?\d+)?/gi;
+function $e(e) {
 	return e.replace(/[\s,]+/g, "").trim();
 }
 function J(e) {
-	return e.replace(je, "{}");
+	return e.replace(Qe, "{}");
 }
 function Y(e) {
-	return e.match(je)?.map(Number) ?? [];
+	return e.match(Qe)?.map(Number) ?? [];
 }
-function Ne(e, t) {
+function et(e, t) {
 	if (typeof e != "string" || typeof t != "string") return {
 		ok: !1,
 		reason: "Both path fields must be strings."
@@ -2339,7 +2252,7 @@ function Ne(e, t) {
 		ok: !1,
 		reason: "Both path fields are required."
 	};
-	let n = Y(e), r = Y(t), i = Me(J(e)), a = Me(J(t));
+	let n = Y(e), r = Y(t), i = $e(J(e)), a = $e(J(t));
 	return i === a ? n.length === r.length ? {
 		ok: !0,
 		template: i,
@@ -2360,27 +2273,27 @@ function Ne(e, t) {
 		toCount: r.length
 	};
 }
-function Pe(e) {
+function tt(e) {
 	let t = Number(e.toFixed(3));
 	return Object.is(t, -0) ? "0" : t.toString();
 }
-function Fe(e, t) {
-	let n = Ne(e, t);
+function nt(e, t) {
+	let n = et(e, t);
 	if (!n.ok) throw Error(n.reason);
 	let r = Y(e), i = Y(t), a = J(e), o = 0;
 	return (e) => (o = 0, a.replace(/\{\}/g, () => {
 		let t = r[o] + (i[o] - r[o]) * e;
-		return o += 1, Pe(t);
+		return o += 1, tt(t);
 	}));
 }
-function Ie(e, t) {
+function rt(e, t) {
 	try {
-		return Fe(e.from, e.to)(t);
+		return nt(e.from, e.to)(t);
 	} catch {
 		return t < .5 ? e.from : e.to;
 	}
 }
-function Le(e, t) {
+function it(e, t) {
 	return e.fromOpacity + (e.toOpacity - e.fromOpacity) * t;
 }
 function X(e, t = 0, n = 1) {
@@ -2391,14 +2304,14 @@ function X(e, t = 0, n = 1) {
 function Z(e) {
 	return !!(e.loading && e.layers.length > 0 && e.layers.every((e) => e.loading && e.loadingOpacity !== void 0));
 }
-function Re(e, t) {
-	return t || (typeof e == "string" ? Ae(e) : e || q[0]);
+function at(e, t) {
+	return t || (typeof e == "string" ? Ze(e) : e || q[0]);
 }
-function ze(e, t, n = !1) {
+function ot(e, t, n = !1) {
 	let r = t ?? (n ? "to" : "from");
 	return r === "loading" && !Z(e) ? "from" : r;
 }
-function Be(e, t) {
+function st(e, t) {
 	if (!Z(e)) return +(t === "to");
 	switch (t) {
 		case "loading": return 1;
@@ -2406,10 +2319,10 @@ function Be(e, t) {
 		default: return 0;
 	}
 }
-function Ve(e, t) {
+function ct(e, t) {
 	return X(t) * (Z(e) ? 2 : 1);
 }
-function He(e, t) {
+function lt(e, t) {
 	let n = {
 		...e,
 		from: e.from,
@@ -2418,12 +2331,12 @@ function He(e, t) {
 		toOpacity: e.toOpacity
 	};
 	return {
-		d: Ie(n, X(t)),
-		opacity: Le(n, X(t))
+		d: rt(n, X(t)),
+		opacity: it(n, X(t))
 	};
 }
-function Ue(e, t) {
-	if (!e.loading || e.loadingOpacity === void 0) return He(e, t / 2);
+function ut(e, t) {
+	if (!e.loading || e.loadingOpacity === void 0) return lt(e, t / 2);
 	let n = t <= 1, r = X(n ? t : t - 1), i = n ? {
 		...e,
 		from: e.from,
@@ -2438,14 +2351,14 @@ function Ue(e, t) {
 		toOpacity: e.toOpacity
 	};
 	return {
-		d: Ie(i, r),
-		opacity: Le(i, r)
+		d: rt(i, r),
+		opacity: it(i, r)
 	};
 }
-function We(e, t) {
+function dt(e, t) {
 	let n = Z(e);
 	return e.layers.map((e) => {
-		let r = n ? Ue(e, X(t, 0, 2)) : He(e, X(t));
+		let r = n ? ut(e, X(t, 0, 2)) : lt(e, X(t));
 		return {
 			id: e.id,
 			mode: e.mode,
@@ -2453,7 +2366,7 @@ function We(e, t) {
 		};
 	});
 }
-function Ge(e) {
+function ft(e) {
 	let t = e.trim().split(/[\s,]+/).map(Number);
 	if (t.length !== 4 || t.some((e) => !Number.isFinite(e))) return {
 		x: 12,
@@ -2472,11 +2385,11 @@ function $(e) {
 	let t = Number(e.toFixed(3));
 	return Object.is(t, -0) ? "0" : t.toString();
 }
-function Ke(e, t, { color: n = "currentColor", loading: r = !1, size: i = 24, strokeWidth: a = 2, title: o } = {}) {
-	let s = We(e, t), c = Ge(e.viewBox), l = r && Z(e) && e.loading, u = o ? `<title>${Q(o)}</title>` : "", d = l ? `<animateTransform attributeName="transform" type="rotate" from="0 ${$(c.x)} ${$(c.y)}" to="${e.loading?.rotationDirection === "counterclockwise" ? "-360" : "360"} ${$(c.x)} ${$(c.y)}" dur="${e.loading?.rotationDuration ?? 900}ms" repeatCount="indefinite" />` : "", f = s.map((t) => t.mode === "fill" && !e.strokeLocked ? `<path d="${Q(t.d)}" opacity="${$(t.opacity)}" fill="currentColor" />` : `<path d="${Q(t.d)}" opacity="${$(t.opacity)}" fill="none" stroke="currentColor" stroke-width="${$(a)}" stroke-linecap="round" stroke-linejoin="round" />`).join("");
+function pt(e, t, { color: n = "currentColor", loading: r = !1, size: i = 24, strokeWidth: a = 2, title: o } = {}) {
+	let s = dt(e, t), c = e.loading?.rotationCenter ?? ft(e.viewBox), l = r && Z(e) && e.loading, u = o ? `<title>${Q(o)}</title>` : "", d = l ? `<animateTransform attributeName="transform" type="rotate" from="0 ${$(c.x)} ${$(c.y)}" to="${e.loading?.rotationDirection === "counterclockwise" ? "-360" : "360"} ${$(c.x)} ${$(c.y)}" dur="${e.loading?.rotationDuration ?? 900}ms" repeatCount="indefinite" />` : "", f = s.map((t) => t.mode === "fill" && !e.strokeLocked ? `<path d="${Q(t.d)}" opacity="${$(t.opacity)}" fill="currentColor" />` : `<path d="${Q(t.d)}" opacity="${$(t.opacity)}" fill="none" stroke="currentColor" stroke-width="${$(a)}" stroke-linecap="round" stroke-linejoin="round" />`).join("");
 	return `<svg aria-hidden="${o ? "false" : "true"}" viewBox="${Q(e.viewBox)}" width="${$(i)}" height="${$(i)}" style="color:${Q(n)};display:block;overflow:visible">${u}<g>${d}${f}</g></svg>`;
 }
 //#endregion
-export { Ke as a, Be as c, q as d, Ve as i, ke as l, Ge as n, Re as o, Z as r, ze as s, We as t, Ae as u };
+export { pt as a, st as c, q as d, ct as i, Xe as l, ft as n, at as o, Z as r, ot as s, dt as t, Ze as u };
 
-//# sourceMappingURL=morph-DqGr4NxU.js.map
+//# sourceMappingURL=morph-BfPb7t8e.js.map

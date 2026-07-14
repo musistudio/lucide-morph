@@ -85,7 +85,9 @@ export function MorphIcon({
   const [position, setPosition] = useState(targetPosition)
   const loading = resolvedState === "loading" && hasLoadingMorph(resolvedAsset)
   const frames = getMorphIconFrames(resolvedAsset, position)
-  const center = getViewBoxCenter(resolvedAsset.viewBox)
+  const center =
+    resolvedAsset.loading?.rotationCenter ??
+    getViewBoxCenter(resolvedAsset.viewBox)
 
   useEffect(() => {
     if (progress !== undefined || !canAnimate()) {

@@ -1,5 +1,6 @@
 import type { MorphAsset, MorphLayer } from "./types"
 import { interpolateOpacity, interpolatePath } from "./path"
+import { getViewBoxCenter } from "../runtime/morph"
 
 type MorphSegment = "direct" | "from-loading" | "loading-to"
 
@@ -104,7 +105,9 @@ export function MorphSvg({
 }: MorphSvgProps) {
   const loadingDuration = asset.loading?.rotationDuration ?? 900
   const loadingDirection =
-    asset.loading?.rotationDirection === "counterclockwise" ? "reverse" : "normal"
+    asset.loading?.rotationDirection === "counterclockwise" ? -360 : 360
+  const loadingCenter =
+    asset.loading?.rotationCenter ?? getViewBoxCenter(asset.viewBox)
 
   return (
     <svg
@@ -122,19 +125,17 @@ export function MorphSvg({
           <OnionLayer asset={asset} progress={1} strokeWidth={strokeWidth} />
         </>
       )}
-      <g
-        className={loadingActive ? "morph-loading-design" : undefined}
-        style={
-          loadingActive
-            ? {
-                animationDirection: loadingDirection,
-                animationDuration: `${loadingDuration}ms`,
-                transformBox: "view-box",
-                transformOrigin: "center",
-              }
-            : undefined
-        }
-      >
+      <g>
+        {loadingActive && (
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            from={`0 ${loadingCenter.x} ${loadingCenter.y}`}
+            to={`${loadingDirection} ${loadingCenter.x} ${loadingCenter.y}`}
+            dur={`${loadingDuration}ms`}
+            repeatCount="indefinite"
+          />
+        )}
         {asset.layers.map((layer) => (
           <LayerPath
             key={layer.id}

@@ -15,6 +15,7 @@ export type MorphLayer = {
 export type MorphLoadingDesign = {
   enabled: boolean
   label: string
+  rotationCenter?: { x: number; y: number }
   rotationDirection: "clockwise" | "counterclockwise"
   rotationDuration: number
 }

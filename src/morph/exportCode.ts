@@ -84,6 +84,7 @@ type MorphLayer = {
 type MorphLoadingDesign = {
   enabled: boolean
   label: string
+  rotationCenter?: { x: number; y: number }
   rotationDirection: "clockwise" | "counterclockwise"
   rotationDuration: number
 }
@@ -247,6 +248,7 @@ export function ${componentName}({
   const progress = useAnimatedProgress(resolvedState, duration)
   const position = useAnimatedStatePosition(resolvedState, duration)
   const loading = resolvedState === "loading"
+  const loadingCenter = asset.loading?.rotationCenter ?? { x: 12, y: 12 }
 
   return (
     <span
@@ -279,11 +281,14 @@ export function ${componentName}({
             <animateTransform
               attributeName="transform"
               type="rotate"
-              from="0 12 12"
+              from={"0 " + loadingCenter.x + " " + loadingCenter.y}
               to={
-                asset.loading.rotationDirection === "counterclockwise"
-                  ? "-360 12 12"
-                  : "360 12 12"
+                (asset.loading.rotationDirection === "counterclockwise"
+                  ? "-360 "
+                  : "360 ") +
+                loadingCenter.x +
+                " " +
+                loadingCenter.y
               }
               dur={asset.loading.rotationDuration + "ms"}
               repeatCount="indefinite"
@@ -364,8 +369,8 @@ function generateVueComponentCode(asset: MorphAsset, settings: EditorSettings) {
           v-if="loading && hasLoadingMorph && asset.loading"
           attributeName="transform"
           type="rotate"
-          from="0 12 12"
-          :to="asset.loading.rotationDirection === 'counterclockwise' ? '-360 12 12' : '360 12 12'"
+          :from="'0 ' + loadingCenter.x + ' ' + loadingCenter.y"
+          :to="(asset.loading.rotationDirection === 'counterclockwise' ? '-360 ' : '360 ') + loadingCenter.x + ' ' + loadingCenter.y"
           :dur="asset.loading.rotationDuration + 'ms'"
           repeatCount="indefinite"
         />
@@ -403,6 +408,7 @@ type MorphLayer = {
 type MorphLoadingDesign = {
   enabled: boolean
   label: string
+  rotationCenter?: { x: number; y: number }
   rotationDirection: "clockwise" | "counterclockwise"
   rotationDuration: number
 }
@@ -423,6 +429,7 @@ type MorphAsset = {
 type MorphState = "from" | "loading" | "to"
 
 const asset: MorphAsset = ${assetCode}
+const loadingCenter = asset.loading?.rotationCenter ?? { x: 12, y: 12 }
 
 const props = withDefaults(
   defineProps<{
@@ -588,6 +595,7 @@ function generateWebComponentCode(asset: MorphAsset, settings: EditorSettings) {
 type MorphLoadingDesign = {
   enabled: boolean
   label: string
+  rotationCenter?: { x: number; y: number }
   rotationDirection: "clockwise" | "counterclockwise"
   rotationDuration: number
 }
@@ -773,7 +781,7 @@ export class ${className} extends HTMLElement {
   private render() {
     if (!this.root) return
 
-    this.root.innerHTML = "<style>:host{display:inline-block;line-height:0}.frame{display:inline-grid;place-items:center;position:relative;line-height:0}.morph{grid-area:1/1}.morph-layers.morph-loading{animation:morph-loading-spin var(--loading-duration) linear infinite;transform-box:view-box;transform-origin:center}@keyframes morph-loading-spin{to{transform:rotate(360deg)}}svg{display:block;overflow:visible}</style>"
+    this.root.innerHTML = "<style>:host{display:inline-block;line-height:0}.frame{display:inline-grid;place-items:center;position:relative;line-height:0}.morph{grid-area:1/1}.morph-layers.morph-loading{animation:morph-loading-spin var(--loading-duration) linear infinite;transform-box:view-box;transform-origin:var(--loading-origin)}@keyframes morph-loading-spin{to{transform:rotate(360deg)}}svg{display:block;overflow:visible}</style>"
 
     const frame = document.createElement("span")
     frame.className = "frame"
@@ -814,6 +822,11 @@ export class ${className} extends HTMLElement {
     frame.style.setProperty(
       "--loading-duration",
       (asset.loading?.rotationDuration ?? 900) + "ms",
+    )
+    const loadingCenter = asset.loading?.rotationCenter ?? { x: 12, y: 12 }
+    frame.style.setProperty(
+      "--loading-origin",
+      loadingCenter.x + "px " + loadingCenter.y + "px",
     )
     frame.setAttribute("aria-busy", String(loading))
     morphLayers.classList.toggle("morph-loading", loading && this.hasLoadingMorph)

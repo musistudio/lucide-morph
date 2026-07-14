@@ -18,12 +18,13 @@ type CubicSubpath = {
 }
 
 type LayerScene = {
-  loading: string
+  loading: string | ((layer: MorphLayer) => string)
   loadingOpacity: number
 }
 
 type PresetScene = {
   label: string
+  rotationCenter?: Point
   rotationDirection: "clockwise" | "counterclockwise"
   rotationDuration: number
   layers: Record<string, LayerScene>
@@ -277,8 +278,9 @@ function loaderArc(
   startDegrees: number,
   endDegrees: number,
   segmentCount: number,
+  radius = loaderRadius,
 ) {
-  const segments = arcSegments(startDegrees, endDegrees, segmentCount)
+  const segments = arcSegments(startDegrees, endDegrees, segmentCount, radius)
   return serializePath([{ start: segments[0].p0, segments }])
 }
 
@@ -304,34 +306,51 @@ function collapsedAt(point: Point, segmentCount: number) {
 
 const loaderGapEnd = pointOnCircle(degrees(288))
 
-function createSequentialScene(
+// Keep the most recognizable silhouette responsible for the loading motion.
+// Secondary marks retreat to the center and only return after the gap closes.
+function createOutlineScene(
   label: string,
-  layerIds: string[],
+  outlineLayerIds: string[],
+  detailLayerIds: string[],
   rotationDirection: PresetScene["rotationDirection"] = "clockwise",
   rotationDuration = 900,
+  radius = loaderRadius,
 ): PresetScene {
-  const sweep = 288 / layerIds.length
+  const sweep = 288 / outlineLayerIds.length
 
   return {
     label,
     rotationDirection,
     rotationDuration,
     layers: Object.fromEntries(
-      layerIds.map((layerId, index) => {
-        const start = sweep * index
-        const end = sweep * (index + 1)
-        return [
-          layerId,
-          {
-            loading: loaderArc(
-              start,
-              end,
-              Math.max(1, Math.ceil((end - start) / 90)),
-            ),
-            loadingOpacity: 1,
-          },
-        ]
-      }),
+      [
+        ...outlineLayerIds.map((layerId, index) => {
+          const start = sweep * index
+          const end = sweep * (index + 1)
+          return [
+            layerId,
+            {
+              loading: loaderArc(
+                start,
+                end,
+                Math.max(1, Math.ceil((end - start) / 90)),
+                radius,
+              ),
+              loadingOpacity: 1,
+            },
+          ] as const
+        }),
+        ...detailLayerIds.map(
+          (layerId) =>
+            [
+              layerId,
+              {
+                loading: collapsedAt({ x: loaderCenter, y: loaderCenter }, 1),
+                loadingOpacity: 0,
+              },
+            ] as const,
+        ),
+      ],
     ),
   }
 }
@@ -373,7 +392,7 @@ const plusToCheckScene: PresetScene = {
 // The arrow shaft makes the long sweep while its wings close the ring.
 const arrowDownToUpScene: PresetScene = {
   label: "Transferring",
-  rotationDirection: "counterclockwise",
+  rotationDirection: "clockwise",
   rotationDuration: 760,
   layers: {
     "arrow-shaft": { loading: loaderArc(0, 144, 2), loadingOpacity: 1 },
@@ -418,7 +437,7 @@ const eyeToEyeOffScene: PresetScene = {
 // The bell dome becomes the ring and the clapper tucks into its lower edge.
 const bellToBellOffScene: PresetScene = {
   label: "Updating notifications",
-  rotationDirection: "counterclockwise",
+  rotationDirection: "clockwise",
   rotationDuration: 960,
   layers: {
     "bell-body": { loading: loaderArc(0, 288, 5), loadingOpacity: 1 },
@@ -473,7 +492,7 @@ const micToMicOffScene: PresetScene = {
 // Shackle and body open from opposite sides and meet as a loading ring.
 const lockToUnlockScene: PresetScene = {
   label: "Updating access",
-  rotationDirection: "counterclockwise",
+  rotationDirection: "clockwise",
   rotationDuration: 980,
   layers: {
     "lock-body": { loading: loaderArc(120, 288, 4), loadingOpacity: 1 },
@@ -572,7 +591,7 @@ const sendToCheckScene: PresetScene = {
 // Filter bars bow progressively into three ordered loader sections.
 const filterToListScene: PresetScene = {
   label: "Applying filters",
-  rotationDirection: "counterclockwise",
+  rotationDirection: "clockwise",
   rotationDuration: 820,
   layers: {
     "filter-top": { loading: loaderArc(0, 96, 2), loadingOpacity: 1 },
@@ -584,7 +603,7 @@ const filterToListScene: PresetScene = {
 // Chevron wings keep their symmetry while curling into opposing half-rings.
 const chevronDownToUpScene: PresetScene = {
   label: "Loading",
-  rotationDirection: "counterclockwise",
+  rotationDirection: "clockwise",
   rotationDuration: 800,
   layers: {
     "chevron-left": { loading: loaderArc(0, 144, 2), loadingOpacity: 1 },
@@ -660,6 +679,33 @@ const fileToApprovedScene: PresetScene = {
   },
 }
 
+// The power ring is already a complete loading track with a natural gap.
+// Keep it intact and only withdraw the stem; the off details return afterward.
+const powerOnToOffScene: PresetScene = {
+  label: "Powering off",
+  rotationCenter: { x: 12, y: 13 },
+  rotationDirection: "clockwise",
+  rotationDuration: 840,
+  layers: {
+    "power-off-lower": {
+      loading: (layer) => layer.from,
+      loadingOpacity: 1,
+    },
+    "power-off-upper": {
+      loading: collapsedAt({ x: loaderCenter, y: loaderCenter }, 1),
+      loadingOpacity: 0,
+    },
+    "power-off-stem": {
+      loading: collapsedAt({ x: loaderCenter, y: loaderCenter }, 1),
+      loadingOpacity: 0,
+    },
+    "power-off-slash": {
+      loading: collapsedAt({ x: loaderCenter, y: loaderCenter }, 1),
+      loadingOpacity: 0,
+    },
+  },
+}
+
 const presetScenes: Record<string, PresetScene> = {
   "menu-x": menuToXScene,
   "play-pause": playToPauseScene,
@@ -681,285 +727,268 @@ const presetScenes: Record<string, PresetScene> = {
   "sun-moon": sunToMoonScene,
   "folder-folder-open": folderToOpenScene,
   "file-file-check": fileToApprovedScene,
-  "collapse-sidebar-to-expand-inspector": createSequentialScene(
+  "collapse-sidebar-to-expand-inspector": createOutlineScene(
     "Switching panel",
-    ["workspace-frame", "workspace-divider", "workspace-arrow"],
+    ["workspace-frame"],
+    ["workspace-divider", "workspace-arrow"],
     "clockwise",
     840,
   ),
-  "maximize-minimize": createSequentialScene(
+  "maximize-minimize": createOutlineScene(
     "Resizing view",
-    [
-      "fullscreen-corner-a",
-      "fullscreen-corner-b",
-      "fullscreen-diagonal-a",
-      "fullscreen-diagonal-b",
-    ],
+    ["fullscreen-corner-a", "fullscreen-corner-b"],
+    ["fullscreen-diagonal-a", "fullscreen-diagonal-b"],
     "clockwise",
     780,
   ),
-  "layout-grid-list": createSequentialScene(
+  "layout-grid-list": createOutlineScene(
     "Changing view",
-    [
-      "view-item-a",
-      "view-item-b",
-      "view-item-c",
-      "view-item-d",
-      "view-item-e",
-      "view-item-f",
-    ],
+    ["view-item-a", "view-item-b", "view-item-c", "view-item-d"],
+    ["view-item-e", "view-item-f"],
     "clockwise",
     860,
   ),
-  "columns-rows": createSequentialScene(
+  "columns-rows": createOutlineScene(
     "Rotating layout",
-    ["layout-frame", "layout-divider"],
-    "counterclockwise",
+    ["layout-frame"],
+    ["layout-divider"],
+    "clockwise",
     880,
   ),
-  "undo-redo": createSequentialScene(
+  "undo-redo": createOutlineScene(
     "Updating history",
-    ["history-arrow", "history-curve"],
-    "counterclockwise",
+    ["history-curve"],
+    ["history-arrow"],
+    "clockwise",
     760,
   ),
-  "rotate-ccw-cw": createSequentialScene(
+  "rotate-ccw-cw": createOutlineScene(
     "Changing direction",
-    ["rotate-orbit", "rotate-corner"],
+    ["rotate-orbit"],
+    ["rotate-corner"],
     "clockwise",
     780,
   ),
-  "zoom-in-out": createSequentialScene(
+  "zoom-in-out": createOutlineScene(
     "Updating zoom",
-    ["zoom-ring", "zoom-handle", "zoom-horizontal", "zoom-vertical"],
+    ["zoom-ring"],
+    ["zoom-handle", "zoom-horizontal", "zoom-vertical"],
     "clockwise",
     820,
+    8,
   ),
-  "pin-pin-off": createSequentialScene(
+  "pin-pin-off": createOutlineScene(
     "Updating pin",
-    ["pin-stem", "pin-body", "pin-upper", "pin-slash"],
-    "counterclockwise",
+    ["pin-body"],
+    ["pin-stem", "pin-upper", "pin-slash"],
+    "clockwise",
     900,
   ),
-  "link-unlink": createSequentialScene(
+  "link-unlink": createOutlineScene(
     "Updating link",
-    [
-      "link-upper",
-      "link-lower",
-      "unlink-mark-a",
-      "unlink-mark-b",
-      "unlink-mark-c",
-      "unlink-mark-d",
-    ],
+    ["link-upper", "link-lower"],
+    ["unlink-mark-a", "unlink-mark-b", "unlink-mark-c", "unlink-mark-d"],
     "clockwise",
     860,
   ),
-  "cloud-download-upload": createSequentialScene(
+  "cloud-download-upload": createOutlineScene(
     "Transferring",
-    ["cloud-body", "cloud-arrow-primary", "cloud-arrow-secondary"],
+    ["cloud-body"],
+    ["cloud-arrow-primary", "cloud-arrow-secondary"],
     "clockwise",
     800,
   ),
-  "mail-mail-open": createSequentialScene(
+  "mail-mail-open": createOutlineScene(
     "Opening mail",
-    ["mail-frame", "mail-flap"],
+    ["mail-frame"],
+    ["mail-flap"],
     "clockwise",
     900,
   ),
-  "user-plus-check": createSequentialScene(
+  "user-plus-check": createOutlineScene(
     "Adding user",
-    [
-      "user-body",
-      "user-head",
-      "user-action-horizontal",
-      "user-action-vertical",
-    ],
+    ["user-head"],
+    ["user-body", "user-action-horizontal", "user-action-vertical"],
     "clockwise",
     840,
   ),
-  "toggle-left-right": createSequentialScene(
+  "toggle-left-right": createOutlineScene(
     "Updating toggle",
-    ["toggle-track", "toggle-thumb"],
+    ["toggle-thumb"],
+    ["toggle-track"],
     "clockwise",
     740,
   ),
-  "align-left-right": createSequentialScene(
+  "align-left-right": createOutlineScene(
     "Aligning content",
-    ["align-middle", "align-bottom", "align-top"],
-    "counterclockwise",
+    ["align-top", "align-middle", "align-bottom"],
+    [],
+    "clockwise",
     760,
   ),
-  "image-image-off": createSequentialScene(
+  "image-image-off": createOutlineScene(
     "Updating image",
-    [
-      "image-frame-lower",
-      "image-sun",
-      "image-mountain",
-      "image-ridge",
-      "image-frame-upper",
-      "image-slash",
-    ],
+    ["image-frame-lower", "image-frame-upper"],
+    ["image-sun", "image-mountain", "image-ridge", "image-slash"],
     "clockwise",
     940,
   ),
-  "wifi-wifi-off": createSequentialScene(
+  "wifi-wifi-off": createOutlineScene(
     "Updating connection",
-    [
-      "wifi-dot",
-      "wifi-inner",
-      "wifi-middle-left",
-      "wifi-outer-left",
-      "wifi-middle-right",
-      "wifi-outer-right",
-      "wifi-slash",
-    ],
-    "counterclockwise",
+    ["wifi-outer-left", "wifi-outer-right"],
+    ["wifi-dot", "wifi-inner", "wifi-middle-left", "wifi-middle-right", "wifi-slash"],
+    "clockwise",
     880,
   ),
-  "circle-play-stop": createSequentialScene(
+  "circle-play-stop": createOutlineScene(
     "Updating playback",
-    ["media-circle", "media-control"],
+    ["media-circle"],
+    ["media-control"],
     "clockwise",
     780,
+    10,
   ),
-  "archive-restore": createSequentialScene(
+  "archive-restore": createOutlineScene(
     "Restoring archive",
-    [
-      "archive-lid",
-      "archive-body-left",
-      "archive-body-right",
-      "archive-action",
-      "archive-shaft",
-    ],
-    "counterclockwise",
+    ["archive-lid", "archive-body-left", "archive-body-right"],
+    ["archive-action", "archive-shaft"],
+    "clockwise",
     900,
   ),
-  "log-in-out": createSequentialScene(
+  "log-in-out": createOutlineScene(
     "Updating session",
-    ["session-door", "session-arrow", "session-shaft"],
+    ["session-door"],
+    ["session-arrow", "session-shaft"],
     "clockwise",
     820,
   ),
-  "copy-clipboard-check": createSequentialScene(
+  "copy-clipboard-check": createOutlineScene(
     "Copying",
-    ["copy-front", "copy-back", "copy-check"],
+    ["copy-front", "copy-back"],
+    ["copy-check"],
     "clockwise",
     800,
   ),
-  "message-message-off": createSequentialScene(
+  "message-message-off": createOutlineScene(
     "Updating messages",
-    ["message-lower", "message-upper", "message-slash"],
-    "counterclockwise",
+    ["message-lower", "message-upper"],
+    ["message-slash"],
+    "clockwise",
     920,
   ),
-  "battery-low-full": createSequentialScene(
+  "battery-low-full": createOutlineScene(
     "Charging battery",
-    [
-      "battery-shell",
-      "battery-terminal",
-      "battery-cell-low",
-      "battery-cell-middle",
-      "battery-cell-full",
-    ],
+    ["battery-shell"],
+    ["battery-terminal", "battery-cell-low", "battery-cell-middle", "battery-cell-full"],
     "clockwise",
     820,
   ),
-  "signal-low-high": createSequentialScene(
+  "signal-low-high": createOutlineScene(
     "Improving signal",
-    ["signal-origin", "signal-low-bar", "signal-middle-bar", "signal-high-bar"],
+    ["signal-origin"],
+    ["signal-low-bar", "signal-middle-bar", "signal-high-bar"],
     "clockwise",
     780,
   ),
-  "volume-low-high": createSequentialScene(
+  "volume-low-high": createOutlineScene(
     "Raising volume",
-    ["volume-level-speaker", "volume-level-inner", "volume-level-outer"],
+    ["volume-level-outer"],
+    ["volume-level-speaker", "volume-level-inner"],
     "clockwise",
     760,
   ),
-  "shield-shield-check": createSequentialScene(
+  "shield-shield-check": createOutlineScene(
     "Verifying",
-    ["shield-outline", "shield-check"],
+    ["shield-outline"],
+    ["shield-check"],
     "clockwise",
     880,
   ),
-  "camera-camera-off": createSequentialScene(
+  "camera-camera-off": createOutlineScene(
     "Updating camera",
-    ["camera-frame-lower", "camera-frame-upper", "camera-lens", "camera-slash"],
-    "counterclockwise",
+    ["camera-frame-lower", "camera-frame-upper"],
+    ["camera-lens", "camera-slash"],
+    "clockwise",
     900,
   ),
-  "video-video-off": createSequentialScene(
+  "video-video-off": createOutlineScene(
     "Updating video",
-    ["video-lens", "video-body", "video-slash"],
-    "counterclockwise",
+    ["video-body", "video-lens"],
+    ["video-slash"],
+    "clockwise",
     860,
   ),
-  "bluetooth-bluetooth-off": createSequentialScene(
+  "bluetooth-bluetooth-off": createOutlineScene(
     "Updating Bluetooth",
-    ["bluetooth-lower", "bluetooth-upper", "bluetooth-slash"],
+    ["bluetooth-lower", "bluetooth-upper"],
+    ["bluetooth-slash"],
     "clockwise",
     840,
   ),
-  "navigation-navigation-off": createSequentialScene(
+  "navigation-navigation-off": createOutlineScene(
     "Updating navigation",
-    ["navigation-lower", "navigation-upper", "navigation-slash"],
-    "counterclockwise",
+    ["navigation-lower", "navigation-upper"],
+    ["navigation-slash"],
+    "clockwise",
     900,
   ),
-  "map-pin-map-pin-check": createSequentialScene(
+  "map-pin-map-pin-check": createOutlineScene(
     "Confirming location",
-    ["location-pin", "location-dot", "location-check"],
+    ["location-pin"],
+    ["location-dot", "location-check"],
     "clockwise",
     860,
   ),
-  "package-package-open": createSequentialScene(
+  "package-package-open": createOutlineScene(
     "Opening package",
-    ["package-spine", "package-shell", "package-fold", "package-flap"],
+    ["package-shell"],
+    ["package-spine", "package-fold", "package-flap"],
     "clockwise",
     940,
   ),
-  "door-closed-open": createSequentialScene(
+  "door-closed-open": createOutlineScene(
     "Opening door",
-    [
-      "door-frame",
-      "door-threshold-left",
-      "door-threshold-right",
-      "door-handle",
-      "door-panel",
-    ],
+    ["door-frame"],
+    ["door-threshold-left", "door-threshold-right", "door-handle", "door-panel"],
     "clockwise",
     920,
   ),
-  "panel-bottom-close-open": createSequentialScene(
+  "panel-bottom-close-open": createOutlineScene(
     "Updating panel",
-    ["bottom-panel-frame", "bottom-panel-divider", "bottom-panel-arrow"],
+    ["bottom-panel-frame"],
+    ["bottom-panel-divider", "bottom-panel-arrow"],
     "clockwise",
     800,
   ),
-  "circle-plus-check": createSequentialScene(
+  "circle-plus-check": createOutlineScene(
     "Completing action",
-    ["circle-action-frame", "circle-action-primary", "circle-action-secondary"],
+    ["circle-action-frame"],
+    ["circle-action-primary", "circle-action-secondary"],
     "clockwise",
     780,
+    10,
   ),
-  "circle-alert-check": createSequentialScene(
+  "circle-alert-check": createOutlineScene(
     "Resolving alert",
-    ["circle-status-frame", "circle-status-primary", "circle-status-dot"],
-    "counterclockwise",
+    ["circle-status-frame"],
+    ["circle-status-primary", "circle-status-dot"],
+    "clockwise",
     820,
+    10,
   ),
-  "clipboard-clipboard-check": createSequentialScene(
+  "clipboard-clipboard-check": createOutlineScene(
     "Checking clipboard",
-    ["clipboard-clip", "clipboard-frame", "clipboard-check"],
+    ["clipboard-frame"],
+    ["clipboard-clip", "clipboard-check"],
     "clockwise",
     820,
   ),
-  "calendar-plus-check": createSequentialScene(
+  "calendar-plus-check": createOutlineScene(
     "Confirming event",
+    ["event-calendar-frame"],
     [
       "event-calendar-left-ring",
       "event-calendar-right-ring",
-      "event-calendar-frame",
       "event-calendar-divider",
       "event-calendar-action",
       "event-calendar-add-arm",
@@ -967,148 +996,134 @@ const presetScenes: Record<string, PresetScene> = {
     "clockwise",
     900,
   ),
-  "user-plus-minus": createSequentialScene(
+  "user-plus-minus": createOutlineScene(
     "Updating membership",
-    ["membership-body", "membership-head", "membership-horizontal", "membership-vertical"],
-    "counterclockwise",
+    ["membership-head"],
+    ["membership-body", "membership-horizontal", "membership-vertical"],
+    "clockwise",
     820,
   ),
-  "bookmark-plus-check": createSequentialScene(
+  "bookmark-plus-check": createOutlineScene(
     "Saving bookmark",
-    ["bookmark-action-ribbon", "bookmark-action-primary", "bookmark-action-secondary"],
+    ["bookmark-action-ribbon"],
+    ["bookmark-action-primary", "bookmark-action-secondary"],
     "clockwise",
     820,
   ),
-  "folder-plus-check": createSequentialScene(
+  "folder-plus-check": createOutlineScene(
     "Creating folder",
-    ["folder-action-frame", "folder-action-primary", "folder-action-secondary"],
+    ["folder-action-frame"],
+    ["folder-action-primary", "folder-action-secondary"],
     "clockwise",
     860,
   ),
-  "file-plus-check": createSequentialScene(
+  "file-plus-check": createOutlineScene(
     "Creating file",
-    ["file-action-outline", "file-action-fold", "file-action-primary", "file-action-secondary"],
+    ["file-action-outline"],
+    ["file-action-fold", "file-action-primary", "file-action-secondary"],
     "clockwise",
     860,
   ),
-  "cloud-cloud-off": createSequentialScene(
+  "cloud-cloud-off": createOutlineScene(
     "Updating cloud",
-    ["cloud-status-lower", "cloud-status-upper", "cloud-status-slash"],
-    "counterclockwise",
+    ["cloud-status-lower", "cloud-status-upper"],
+    ["cloud-status-slash"],
+    "clockwise",
     900,
   ),
-  "monitor-play-stop": createSequentialScene(
+  "monitor-play-stop": createOutlineScene(
     "Updating playback",
-    ["screen-control", "screen-stand", "screen-base", "screen-frame"],
+    ["screen-frame"],
+    ["screen-control", "screen-stand", "screen-base"],
     "clockwise",
     820,
   ),
-  "mouse-pointer-click": createSequentialScene(
+  "mouse-pointer-click": createOutlineScene(
     "Clicking",
-    [
-      "pointer-body",
-      "pointer-ray-top-right",
-      "pointer-ray-left",
-      "pointer-ray-bottom-left",
-      "pointer-ray-top-left",
-    ],
+    ["pointer-body"],
+    ["pointer-ray-top-right", "pointer-ray-left", "pointer-ray-bottom-left", "pointer-ray-top-left"],
     "clockwise",
     760,
   ),
-  "scan-scan-line": createSequentialScene(
+  "scan-scan-line": createOutlineScene(
     "Scanning",
-    [
-      "scanner-top-left",
-      "scanner-top-right",
-      "scanner-bottom-right",
-      "scanner-bottom-left",
-      "scanner-line",
-    ],
+    ["scanner-top-left", "scanner-top-right", "scanner-bottom-right", "scanner-bottom-left"],
+    ["scanner-line"],
     "clockwise",
     820,
   ),
-  "printer-printer-check": createSequentialScene(
+  "printer-printer-check": createOutlineScene(
     "Printing",
-    ["print-body", "print-paper", "print-output", "print-check"],
+    ["print-body", "print-paper"],
+    ["print-output", "print-check"],
     "clockwise",
     900,
   ),
-  "laptop-laptop-check": createSequentialScene(
+  "laptop-laptop-check": createOutlineScene(
     "Verifying device",
-    ["device-frame", "device-base", "device-check"],
+    ["device-frame"],
+    ["device-base", "device-check"],
     "clockwise",
     840,
   ),
-  "receipt-receipt-text": createSequentialScene(
+  "receipt-receipt-text": createOutlineScene(
     "Preparing receipt",
-    [
-      "receipt-outline",
-      "receipt-content-primary",
-      "receipt-content-secondary",
-      "receipt-content-tertiary",
-    ],
+    ["receipt-outline"],
+    ["receipt-content-primary", "receipt-content-secondary", "receipt-content-tertiary"],
     "clockwise",
     880,
   ),
-  "list-list-checks": createSequentialScene(
+  "list-list-checks": createOutlineScene(
     "Building checklist",
-    [
-      "checklist-bottom-marker",
-      "checklist-top-marker",
-      "checklist-middle-marker",
-      "checklist-top-rail",
-      "checklist-middle-rail",
-      "checklist-bottom-rail",
-    ],
+    ["checklist-top-rail", "checklist-middle-rail", "checklist-bottom-rail"],
+    ["checklist-top-marker", "checklist-middle-marker", "checklist-bottom-marker"],
     "clockwise",
     860,
   ),
-  "table-cells-merge-split": createSequentialScene(
+  "table-cells-merge-split": createOutlineScene(
     "Updating table cells",
+    ["table-action-frame"],
     [
-      "table-action-frame",
       "table-action-top-divider",
       "table-action-bottom-divider",
       "table-action-lower-split",
       "table-action-upper-split",
     ],
-    "counterclockwise",
+    "clockwise",
     860,
   ),
-  "chart-bar-decrease-increase": createSequentialScene(
+  "chart-bar-decrease-increase": createOutlineScene(
     "Updating trend",
-    ["trend-frame", "trend-middle-bar", "trend-top-bar", "trend-bottom-bar"],
+    ["trend-frame"],
+    ["trend-middle-bar", "trend-top-bar", "trend-bottom-bar"],
     "clockwise",
     820,
   ),
-  "battery-charging-full": createSequentialScene(
+  "battery-charging-full": createOutlineScene(
     "Finishing charge",
-    [
-      "charge-shell-primary",
-      "charge-shell-secondary",
-      "charge-bolt",
-      "charge-terminal",
-      "charge-final-cell",
-    ],
+    ["charge-shell-primary", "charge-shell-secondary"],
+    ["charge-bolt", "charge-terminal", "charge-final-cell"],
     "clockwise",
     840,
   ),
-  "square-plus-check": createSequentialScene(
+  "square-plus-check": createOutlineScene(
     "Completing action",
-    ["square-action-frame", "square-action-primary", "square-action-secondary"],
+    ["square-action-frame"],
+    ["square-action-primary", "square-action-secondary"],
     "clockwise",
     780,
   ),
-  "mail-plus-check": createSequentialScene(
+  "mail-plus-check": createOutlineScene(
     "Confirming mail",
-    ["mail-action-frame", "mail-action-flap", "mail-action-primary", "mail-action-secondary"],
+    ["mail-action-frame"],
+    ["mail-action-flap", "mail-action-primary", "mail-action-secondary"],
     "clockwise",
     860,
   ),
-  "alarm-clock-plus-check": createSequentialScene(
+  "alarm-clock-plus-check": createOutlineScene(
     "Confirming alarm",
+    ["alarm-action-face"],
     [
-      "alarm-action-face",
       "alarm-action-left-bell",
       "alarm-action-right-bell",
       "alarm-action-left-foot",
@@ -1118,31 +1133,35 @@ const presetScenes: Record<string, PresetScene> = {
     ],
     "clockwise",
     900,
+    8,
   ),
-  "timer-timer-reset": createSequentialScene(
+  "timer-timer-reset": createOutlineScene(
     "Resetting timer",
-    ["timer-reset-cap", "timer-reset-hand", "timer-reset-face", "timer-reset-arrow"],
-    "counterclockwise",
+    ["timer-reset-face"],
+    ["timer-reset-cap", "timer-reset-hand", "timer-reset-arrow"],
+    "clockwise",
     860,
+    8,
   ),
-  "power-power-off": createSequentialScene(
-    "Powering off",
-    ["power-off-stem", "power-off-lower", "power-off-upper", "power-off-slash"],
-    "counterclockwise",
-    840,
-  ),
-  "circle-pause-play": createSequentialScene(
+  "power-power-off": powerOnToOffScene,
+  // The existing 10px media ring is already the ideal loader. It opens in
+  // place while the pause bars retreat, then closes around the emerging play.
+  "circle-pause-play": createOutlineScene(
     "Updating playback",
-    ["circle-media-frame", "circle-media-primary", "circle-media-secondary"],
+    ["circle-media-frame"],
+    ["circle-media-primary", "circle-media-secondary"],
     "clockwise",
     780,
+    10,
   ),
 }
 
 function applyLayerScene(layer: MorphLayer, scene: LayerScene): MorphLayer {
   let paths
   try {
-    paths = normalizeScenePaths(layer.from, scene.loading, layer.to)
+    const loading =
+      typeof scene.loading === "function" ? scene.loading(layer) : scene.loading
+    paths = normalizeScenePaths(layer.from, loading, layer.to)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     throw new Error(`${layer.id}: ${message}`)
@@ -1179,6 +1198,7 @@ export function applyPresetSceneDesign(asset: MorphAsset): MorphAsset {
     loading: {
       enabled: true,
       label: scene.label,
+      rotationCenter: scene.rotationCenter,
       rotationDirection: scene.rotationDirection,
       rotationDuration: scene.rotationDuration,
     },

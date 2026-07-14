@@ -71,6 +71,29 @@ input[type="range"] {
   scrollbar-color: rgba(24, 24, 27, 0.22) transparent;
 }
 
+.preview-copy-button {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  visibility: hidden;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    visibility 0s linear 180ms;
+}
+
+.preview-card:hover .preview-copy-button {
+  opacity: 0.9;
+  pointer-events: auto;
+  transform: translateY(0);
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.preview-card:hover .preview-copy-button:hover {
+  opacity: 1;
+}
+
 .morph-loading-design {
   animation: morph-loading-spin 0.9s linear infinite;
 }
@@ -82,6 +105,10 @@ input[type="range"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .preview-copy-button {
+    transition-duration: 1ms;
+  }
+
   .morph-loading-design {
     animation-duration: 2.4s;
   }

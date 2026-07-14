@@ -1,4 +1,4 @@
-import { c as e, d as t, i as n, l as r, n as i, o as a, r as o, s, t as c, u as l } from "./chunks/morph-DqGr4NxU.js";
+import { c as e, d as t, i as n, l as r, n as i, o as a, r as o, s, t as c, u as l } from "./chunks/morph-BfPb7t8e.js";
 import { useEffect as u, useMemo as d, useState as f } from "react";
 import { jsx as p, jsxs as m } from "react/jsx-runtime";
 //#region src/react.tsx
@@ -12,7 +12,7 @@ function _() {
 	return typeof requestAnimationFrame < "u" && typeof cancelAnimationFrame < "u";
 }
 function v({ active: t = !1, asset: r, color: l = "currentColor", duration: v = 420, preset: y, progress: b, size: x = 24, state: S, strokeWidth: C = 2, style: w, title: T, ...E }) {
-	let D = d(() => a(y, r), [r, y]), O = s(D, S, t), k = b === void 0 ? e(D, O) : n(D, b), [A, j] = f(k), M = O === "loading" && o(D), N = c(D, A), P = i(D.viewBox);
+	let D = d(() => a(y, r), [r, y]), O = s(D, S, t), k = b === void 0 ? e(D, O) : n(D, b), [A, j] = f(k), M = O === "loading" && o(D), N = c(D, A), P = D.loading?.rotationCenter ?? i(D.viewBox);
 	return u(() => {
 		if (b !== void 0 || !_()) {
 			j(k);

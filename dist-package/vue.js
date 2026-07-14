@@ -1,4 +1,4 @@
-import { c as e, d as t, i as n, l as r, n as i, o as a, r as o, s, t as c, u as l } from "./chunks/morph-DqGr4NxU.js";
+import { c as e, d as t, i as n, l as r, n as i, o as a, r as o, s, t as c, u as l } from "./chunks/morph-BfPb7t8e.js";
 import { computed as u, defineComponent as d, h as f, onBeforeUnmount as p, ref as m, watch as h } from "vue";
 //#region src/vue.ts
 function g(e) {
@@ -75,7 +75,7 @@ var y = d({
 		], x, { immediate: !0 }), p(() => {
 			b && cancelAnimationFrame(b);
 		}), () => {
-			let e = r.value, n = l.value === "loading" && o(e), a = i(e.viewBox), s = c(e, y.value).map((n) => n.mode === "fill" && !e.strokeLocked ? f("path", {
+			let e = r.value, n = l.value === "loading" && o(e), a = e.loading?.rotationCenter ?? i(e.viewBox), s = c(e, y.value).map((n) => n.mode === "fill" && !e.strokeLocked ? f("path", {
 				d: n.d,
 				fill: "currentColor",
 				key: n.id,
