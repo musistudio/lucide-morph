@@ -34,7 +34,10 @@ import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import {
   componentNameForAsset,
-  generateComponentCode,
+  exportTargets,
+  generateNpmReactUsageCode,
+  generateNpmUsageCode,
+  type ExportTarget,
 } from "@/morph/exportCode"
 import { MorphSvg } from "@/morph/MorphSvg"
 import { cloneAsset, getPresetById, morphPresets } from "@/morph/presets"
@@ -49,6 +52,12 @@ const defaultLoadingDuration = 3000
 const loadingDurationMin = 500
 const loadingDurationMax = 10000
 const loadingDurationStep = 100
+
+const npmInstallCommands: Record<ExportTarget, string> = {
+  react: "npm install @musistudio/lucide-morph",
+  vue: "npm install @musistudio/lucide-morph",
+  "web-component": "npm install @musistudio/lucide-morph",
+}
 
 const defaultSettings: EditorSettings = {
   componentName: "MenuToXIcon",
@@ -576,7 +585,7 @@ function MorphPresetCard({
         size="iconSm"
         onClick={onCopyCode}
         className="preview-copy-button absolute right-2 top-2 z-10 h-8 w-8 border border-zinc-100 bg-white/85 shadow-sm backdrop-blur hover:bg-white"
-        aria-label={`Copy ${asset.name} code`}
+        aria-label={`Copy npm usage for ${asset.name}`}
       >
         {copied ? (
           <Check className="h-4 w-4 text-[#FF5B00]" />
@@ -691,6 +700,9 @@ export default function App() {
   const [asyncPhase, setAsyncPhase] = useState<AsyncPreviewPhase>("from")
   const [loadingPresence, setLoadingPresence] = useState(0)
   const [galleryCopyId, setGalleryCopyId] = useState<string | null>(null)
+  const [heroExportTarget, setHeroExportTarget] =
+    useState<ExportTarget>("react")
+  const [heroCopyTarget, setHeroCopyTarget] = useState<ExportTarget | null>(null)
   const [iconSearch, setIconSearch] = useState("")
   const [presetSearch, setPresetSearch] = useState("")
   const [iconPickerTarget, setIconPickerTarget] =
@@ -780,6 +792,9 @@ export default function App() {
         : "direct"
   const loadingProgress =
     loadingSegment === "from-loading" ? loadingPresence : progress
+  const heroExportLabel =
+    exportTargets.find((option) => option.value === heroExportTarget)?.label ??
+    "React"
 
   function updateDuration(value: number) {
     const duration = normalizeDuration(value)
@@ -1065,18 +1080,36 @@ export default function App() {
 
   async function copyPresetCode(preset: MorphAsset) {
     await writeClipboardText(
-      generateComponentCode(
+      generateNpmReactUsageCode(
         preset,
         {
           ...settings,
           componentName: componentNameForAsset(preset),
         },
-        "react",
       ),
     )
     setGalleryCopyId(preset.id)
     window.setTimeout(() => {
       setGalleryCopyId((current) => (current === preset.id ? null : current))
+    }, 1200)
+  }
+
+  async function copyHeroCode() {
+    const target = heroExportTarget
+
+    await writeClipboardText(
+      generateNpmUsageCode(
+        asset,
+        {
+          ...settings,
+          componentName: componentNameForAsset(asset),
+        },
+        target,
+      ),
+    )
+    setHeroCopyTarget(target)
+    window.setTimeout(() => {
+      setHeroCopyTarget((current) => (current === target ? null : current))
     }, 1200)
   }
 
@@ -1122,11 +1155,11 @@ export default function App() {
           <div className="absolute left-[8%] top-24 -z-10 h-40 w-40 rounded-full bg-[#FF5B00]/10 blur-3xl" />
           <div className="absolute right-[14%] top-16 -z-10 h-48 w-48 rounded-full bg-[#FFB84D]/22 blur-3xl" />
 
-          <div className="mx-auto max-w-6xl px-4 py-14 sm:py-18">
+          <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-14 sm:py-18 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
             <div className="max-w-3xl text-left">
               <h2
                 aria-label="Shape motion. Ship icons."
-                className="text-[clamp(3rem,8vw,6.8rem)] font-semibold leading-[0.9] tracking-[-0.045em] text-slate-950"
+                className="text-[clamp(3rem,7.4vw,6.8rem)] font-semibold leading-[0.9] tracking-[-0.045em] text-slate-950"
               >
                 <span className="block">Shape motion.</span>
                 <span className="block bg-gradient-to-r from-[#FF5B00] via-[#FF8A1F] to-[#7A2E00] bg-clip-text text-transparent">
@@ -1146,70 +1179,156 @@ export default function App() {
                 <Badge tone="neutral">React · Vue · Web Component</Badge>
               </div>
             </div>
+
+            <aside
+              aria-label={`${heroExportLabel} package setup`}
+              data-testid="hero-code-card"
+              className="relative overflow-hidden rounded-2xl border border-slate-800/90 bg-[#111214] p-2 text-white shadow-[0_28px_80px_rgba(15,23,42,0.28)]"
+            >
+              <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-[#FF5B00]/20 blur-3xl" />
+              <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#0B0C0E]/95">
+                <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
+                  <div className="flex gap-1.5" aria-hidden="true">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#FF5B00]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                  </div>
+                  <span className="font-mono text-[11px] text-zinc-500">
+                    package setup
+                  </span>
+                </div>
+
+                <div className="p-4 sm:p-5">
+                  <div
+                    className="grid grid-cols-3 gap-1 rounded-lg border border-white/10 bg-white/[0.04] p-1"
+                    role="group"
+                    aria-label="Code framework"
+                  >
+                    {exportTargets.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        aria-pressed={heroExportTarget === option.value}
+                        onClick={() => setHeroExportTarget(option.value)}
+                        className={cn(
+                          "rounded-md px-2 py-2 text-[11px] font-medium transition-all sm:text-xs",
+                          heroExportTarget === option.value
+                            ? "bg-white text-slate-950 shadow-[0_6px_20px_rgba(0,0,0,0.28)]"
+                            : "text-zinc-500 hover:bg-white/[0.06] hover:text-zinc-200",
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="mt-5">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <span className="text-xs font-medium text-zinc-300">
+                        Install for {heroExportLabel}
+                      </span>
+                      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#FF8A1F]">
+                        terminal
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-3 rounded-lg border border-white/10 bg-black/45 px-3 py-3.5 font-mono text-xs leading-5 sm:text-sm">
+                      <span className="select-none text-[#FF6B16]" aria-hidden="true">
+                        $
+                      </span>
+                      <code className="min-w-0 break-words text-zinc-200">
+                        {npmInstallCommands[heroExportTarget]}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
           </div>
         </section>
 
         <section className="mx-auto max-w-6xl px-4 pb-12">
           <div className="overflow-hidden rounded-lg border border-zinc-100 bg-white shadow-[0_18px_45px_rgba(24,24,27,0.08)]">
             <div className="stage-grid relative grid min-h-[360px] place-items-center overflow-hidden p-8 sm:min-h-[430px]">
-              <div className="absolute left-4 top-4 z-10 w-64 max-w-[calc(100%-2rem)]">
-                <Select value={selectedPreset} onValueChange={loadPreset}>
-                  <SelectTrigger aria-label="Preset">
-                    <SelectValue placeholder="Select preset" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {selectedPreset === "custom" && (
-                      <SelectItem value="custom">Custom</SelectItem>
-                    )}
-                    {morphPresets.map((preset) => (
-                      <SelectItem key={preset.id} value={preset.id}>
-                        {preset.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="absolute right-4 top-4 z-10">
-                {settings.loadingEnabled ? (
-                  <Button
-                    variant={asyncPreviewRunning ? "default" : "secondary"}
-                    disabled={!hasLoadingDesign}
-                    onClick={
-                      asyncPreviewRunning ? cancelAsyncPreview : startAsyncPreview
-                    }
-                    aria-label={
-                      !hasLoadingDesign
-                        ? "Loading middle state unavailable"
-                        : asyncPreviewRunning
-                          ? "Cancel loading flow"
-                          : "Run loading flow"
-                    }
-                  >
-                    {asyncPreviewRunning ? (
-                      <X className="h-4 w-4" />
+              <div className="absolute inset-x-4 top-4 z-10 flex flex-wrap items-start gap-2">
+                <div className="w-64 max-w-full">
+                  <Select value={selectedPreset} onValueChange={loadPreset}>
+                    <SelectTrigger aria-label="Preset">
+                      <SelectValue placeholder="Select preset" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedPreset === "custom" && (
+                        <SelectItem value="custom">Custom</SelectItem>
+                      )}
+                      {morphPresets.map((preset) => (
+                        <SelectItem key={preset.id} value={preset.id}>
+                          {preset.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="ml-auto flex items-center justify-end gap-2">
+                  <div className="flex items-center gap-2">
+                    {settings.loadingEnabled ? (
+                      <Button
+                        variant={asyncPreviewRunning ? "default" : "secondary"}
+                        disabled={!hasLoadingDesign}
+                        onClick={
+                          asyncPreviewRunning
+                            ? cancelAsyncPreview
+                            : startAsyncPreview
+                        }
+                        aria-label={
+                          !hasLoadingDesign
+                            ? "Loading middle state unavailable"
+                            : asyncPreviewRunning
+                              ? "Cancel loading flow"
+                              : "Run loading flow"
+                        }
+                      >
+                        {asyncPreviewRunning ? (
+                          <X className="h-4 w-4" />
+                        ) : (
+                          <Play className="h-4 w-4" />
+                        )}
+                        <span className="hidden sm:inline">
+                          {asyncPreviewRunning ? "Cancel" : "Run preview"}
+                        </span>
+                      </Button>
                     ) : (
-                      <Play className="h-4 w-4" />
+                      <Button
+                        variant={loop ? "default" : "secondary"}
+                        onClick={() => setLoop((value) => !value)}
+                        aria-label={loop ? "Pause loop" : "Loop preview"}
+                      >
+                        {loop ? (
+                          <Pause className="h-4 w-4" />
+                        ) : (
+                          <Play className="h-4 w-4" />
+                        )}
+                        <span className="hidden sm:inline">
+                          {loop ? "Pause" : "Loop preview"}
+                        </span>
+                      </Button>
                     )}
-                    <span className="hidden sm:inline">
-                      {asyncPreviewRunning ? "Cancel" : "Run preview"}
-                    </span>
-                  </Button>
-                ) : (
-                  <Button
-                    variant={loop ? "default" : "secondary"}
-                    onClick={() => setLoop((value) => !value)}
-                    aria-label={loop ? "Pause loop" : "Loop preview"}
-                  >
-                    {loop ? (
-                      <Pause className="h-4 w-4" />
-                    ) : (
-                      <Play className="h-4 w-4" />
-                    )}
-                    <span className="hidden sm:inline">
-                      {loop ? "Pause" : "Loop preview"}
-                    </span>
-                  </Button>
-                )}
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={copyHeroCode}
+                      aria-label={`Copy ${heroExportLabel} npm usage`}
+                      title={`Copy ${heroExportLabel} npm usage`}
+                    >
+                      {heroCopyTarget === heroExportTarget ? (
+                        <Check className="h-4 w-4 text-[#FF5B00]" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               {settings.loadingEnabled && hasLoadingDesign ? (

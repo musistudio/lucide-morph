@@ -2,6 +2,8 @@ import type { EditorSettings, MorphAsset } from "./types"
 
 export type ExportTarget = "react" | "vue" | "web-component"
 
+export const npmPackageName = "@musistudio/lucide-morph"
+
 export const exportTargets: Array<{
   value: ExportTarget
   label: string
@@ -45,6 +47,107 @@ export function extensionForExportTarget(target: ExportTarget) {
   return (
     exportTargets.find((option) => option.value === target)?.extension ?? "tsx"
   )
+}
+
+export function generateNpmReactUsageCode(
+  asset: MorphAsset,
+  settings: EditorSettings,
+) {
+  const componentName = normalizeComponentName(settings.componentName, asset)
+
+  return `import { MorphIcon } from "${npmPackageName}/react"
+
+export function ${componentName}({ active = false }: { active?: boolean }) {
+  return (
+    <MorphIcon
+      preset=${JSON.stringify(asset.id)}
+      active={active}
+      size={${settings.size}}
+      color=${JSON.stringify(settings.color)}
+      strokeWidth={${settings.strokeWidth}}
+      duration={${settings.duration}}
+      title=${JSON.stringify(asset.name)}
+    />
+  )
+}
+`
+}
+
+function escapeHtmlAttribute(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+}
+
+export function generateNpmVueUsageCode(
+  asset: MorphAsset,
+  settings: EditorSettings,
+) {
+  const componentName = normalizeComponentName(settings.componentName, asset)
+
+  return `<!-- ${componentName}.vue -->
+<script setup lang="ts">
+import { MorphIcon } from "${npmPackageName}/vue"
+
+const props = withDefaults(defineProps<{ active?: boolean }>(), {
+  active: false,
+})
+</script>
+
+<template>
+  <MorphIcon
+    preset="${escapeHtmlAttribute(asset.id)}"
+    :active="props.active"
+    :size="${settings.size}"
+    color="${escapeHtmlAttribute(settings.color)}"
+    :stroke-width="${settings.strokeWidth}"
+    :duration="${settings.duration}"
+    title="${escapeHtmlAttribute(asset.name)}"
+  />
+</template>
+`
+}
+
+export function generateNpmWebComponentUsageCode(
+  asset: MorphAsset,
+  settings: EditorSettings,
+) {
+  const componentName = normalizeComponentName(settings.componentName, asset)
+
+  return `import { defineMorphIconElement } from "${npmPackageName}/webcomponent"
+
+defineMorphIconElement()
+
+export function create${componentName}(active = false) {
+  const icon = document.createElement("lucide-morph")
+  icon.setAttribute("preset", ${JSON.stringify(asset.id)})
+  icon.setAttribute("size", ${JSON.stringify(String(settings.size))})
+  icon.setAttribute("color", ${JSON.stringify(settings.color)})
+  icon.setAttribute("stroke-width", ${JSON.stringify(String(settings.strokeWidth))})
+  icon.setAttribute("duration", ${JSON.stringify(String(settings.duration))})
+  icon.setAttribute("title", ${JSON.stringify(asset.name)})
+  icon.toggleAttribute("active", active)
+  return icon
+}
+`
+}
+
+export function generateNpmUsageCode(
+  asset: MorphAsset,
+  settings: EditorSettings,
+  target: ExportTarget,
+) {
+  switch (target) {
+    case "vue":
+      return generateNpmVueUsageCode(asset, settings)
+    case "web-component":
+      return generateNpmWebComponentUsageCode(asset, settings)
+    case "react":
+    default:
+      return generateNpmReactUsageCode(asset, settings)
+  }
 }
 
 export function generateComponentCode(

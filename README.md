@@ -15,27 +15,33 @@ and framework-ready runtime packages for React, Vue, and Web Components.
 
 ## npm package
 
-Build the package before publishing:
+Install the package together with the framework integration you use:
 
 ```sh
-npm run build:package
-npm publish
+npm install @musistudio/lucide-morph
 ```
+
+Use React 18 or newer for the React entry, or install Vue 3.3 or newer for the
+Vue entry.
 
 The published package exposes one root preset entry and three framework-specific
 subpath packages:
 
 ```txt
-lucide-morph
-lucide-morph/react
-lucide-morph/vue
-lucide-morph/webcomponent
+@musistudio/lucide-morph
+@musistudio/lucide-morph/react
+@musistudio/lucide-morph/vue
+@musistudio/lucide-morph/webcomponent
 ```
 
 The root entry contains all preset data and pure helpers:
 
 ```ts
-import { getPresetById, morphPresets } from "lucide-morph"
+import {
+  getPresetById,
+  morphPresets,
+  renderMorphIconSvg,
+} from "@musistudio/lucide-morph"
 
 console.log(morphPresets.length)
 console.log(getPresetById("menu-x"))
@@ -45,37 +51,71 @@ console.log(getPresetById("collapse-sidebar-to-expand-inspector"))
 ### React
 
 ```tsx
-import { MorphIcon } from "lucide-morph/react"
+import { useState } from "react"
+import { MorphIcon } from "@musistudio/lucide-morph/react"
 
 export function Example() {
+  const [active, setActive] = useState(false)
+
   return (
-    <MorphIcon
-      preset="menu-x"
-      active
-      size={32}
-      color="#FF5B00"
-      title="Open menu"
-    />
+    <button type="button" onClick={() => setActive((value) => !value)}>
+      <MorphIcon
+        preset="menu-x"
+        active={active}
+        size={32}
+        color="#FF5B00"
+        title={active ? "Close menu" : "Open menu"}
+      />
+    </button>
   )
 }
 ```
+
+The copy button on every preset card produces a ready-to-paste React wrapper
+using this package entry. The copied component keeps the editor's current
+`size`, `color`, `strokeWidth`, and `duration` values and exposes an `active`
+prop so the application controls the transition:
+
+```tsx
+import { MorphIcon } from "@musistudio/lucide-morph/react"
+
+export function MenuToXIcon({ active = false }: { active?: boolean }) {
+  return <MorphIcon preset="menu-x" active={active} />
+}
+```
+
+The Hero's Code card includes a React, Vue, and Web Component switch and shows
+the package install command. The preview copy button sits directly to the right
+of **Run preview** and copies npm-package code for the selected framework using
+the current preset and editor settings.
 
 ### Vue
 
 ```vue
 <script setup lang="ts">
-import { MorphIcon } from "lucide-morph/vue"
+import { ref } from "vue"
+import { MorphIcon } from "@musistudio/lucide-morph/vue"
+
+const active = ref(false)
 </script>
 
 <template>
-  <MorphIcon preset="play-pause" state="loading" :size="32" color="#FF5B00" />
+  <button type="button" @click="active = !active">
+    <MorphIcon
+      preset="play-pause"
+      :active="active"
+      :size="32"
+      color="#FF5B00"
+      title="Toggle playback"
+    />
+  </button>
 </template>
 ```
 
 ### Web Component
 
 ```ts
-import { defineMorphIconElement } from "lucide-morph/webcomponent"
+import { defineMorphIconElement } from "@musistudio/lucide-morph/webcomponent"
 
 defineMorphIconElement()
 ```
@@ -86,6 +126,23 @@ defineMorphIconElement()
 
 Every entry also exports `morphPresets`, `getPresetById`, `cloneAsset`, and the
 shared `MorphAsset` types.
+
+All three components accept the same runtime controls:
+
+- `preset`: a preset id such as `"menu-x"`, or a preset object.
+- `active`: maps `false` to the `from` frame and `true` to the `to` frame.
+- `state`: explicitly controls `"from"`, `"loading"`, or `"to"` and takes
+  precedence over `active`.
+- `progress`: directly controls interpolation progress when provided.
+- `size`, `color`, `strokeWidth`, and `duration`: visual and timing options.
+- `title`: adds an accessible image label; without it the icon is decorative.
+
+To build a release locally and inspect the files that will be published:
+
+```sh
+npm run build:package
+npm pack --dry-run
+```
 
 ## Async loading states
 
@@ -108,6 +165,9 @@ operation, then move to `to` on success or back to `from` when it is cancelled o
 fails. The editor's loading duration only simulates that wait during preview.
 
 ```tsx
+import { useState } from "react"
+import { MorphIcon } from "@musistudio/lucide-morph/react"
+
 const [iconState, setIconState] = useState<"from" | "loading" | "to">("from")
 
 async function play() {
@@ -121,7 +181,7 @@ async function play() {
   }
 }
 
-<PlayToPauseIcon state={iconState} />
+<MorphIcon preset="play-pause" state={iconState} title="Playback state" />
 ```
 
 ## Examples
@@ -153,6 +213,17 @@ Preview a production build:
 ```sh
 npm run preview
 ```
+
+Run the npm package component tests:
+
+```sh
+npx playwright install chromium
+npm test
+```
+
+The test command builds `dist-package` first, then loads the root, React, Vue,
+and Web Component package exports in a real browser. It also verifies that the
+preset gallery copies npm-package usage code.
 
 ## License
 
