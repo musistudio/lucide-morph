@@ -4,11 +4,19 @@ export type MorphLayer = {
   id: string
   name: string
   from: string
+  loading?: string
   to: string
   fromOpacity: number
+  loadingOpacity?: number
   toOpacity: number
   mode: MorphLayerMode
-  strokeWidth?: number
+}
+
+export type MorphLoadingDesign = {
+  enabled: boolean
+  label: string
+  rotationDirection: "clockwise" | "counterclockwise"
+  rotationDuration: number
 }
 
 export type MorphAsset = {
@@ -19,6 +27,8 @@ export type MorphAsset = {
   fromIcon?: string
   toIcon?: string
   viewBox: string
+  strokeLocked?: boolean
+  loading?: MorphLoadingDesign
   layers: MorphLayer[]
 }
 
@@ -26,6 +36,8 @@ export type EditorSettings = {
   componentName: string
   color: string
   duration: number
+  loadingDuration: number
+  loadingEnabled: boolean
   size: number
   strokeWidth: number
   showOnion: boolean

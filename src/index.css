@@ -7,7 +7,7 @@
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   font-synthesis: none;
   text-rendering: geometricPrecision;
   -webkit-font-smoothing: antialiased;
@@ -26,8 +26,8 @@ body,
 
 body {
   margin: 0;
-  background: #121214;
-  color: #f6f1e8;
+  background: #fff7ed;
+  color: #191919;
   font-family:
     Inter,
     ui-sans-serif,
@@ -46,16 +46,16 @@ select {
 }
 
 ::selection {
-  background: rgba(16, 185, 129, 0.35);
+  background: rgba(255, 91, 0, 0.2);
 }
 
 .stage-grid {
-  background-color: #18181b;
+  background-color: #ffffff;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(rgba(16, 185, 129, 0.13) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(16, 185, 129, 0.13) 1px, transparent 1px);
+    linear-gradient(rgba(24, 24, 27, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 24, 27, 0.045) 1px, transparent 1px),
+    linear-gradient(rgba(255, 91, 0, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 91, 0, 0.09) 1px, transparent 1px);
   background-size:
     24px 24px,
     24px 24px,
@@ -64,9 +64,25 @@ select {
 }
 
 input[type="range"] {
-  accent-color: #10b981;
+  accent-color: #ff5b00;
 }
 
 .code-scroll {
-  scrollbar-color: rgba(244, 244, 245, 0.25) transparent;
+  scrollbar-color: rgba(24, 24, 27, 0.22) transparent;
+}
+
+.morph-loading-design {
+  animation: morph-loading-spin 0.9s linear infinite;
+}
+
+@keyframes morph-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .morph-loading-design {
+    animation-duration: 2.4s;
+  }
 }

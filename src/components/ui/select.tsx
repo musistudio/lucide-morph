@@ -96,7 +96,7 @@ export const SelectTrigger = React.forwardRef<
       disabled={disabled}
       onClick={() => setOpen(!open)}
       className={cn(
-        "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-zinc-800 bg-zinc-950 px-3 text-left text-sm text-zinc-100 outline-none transition-colors hover:bg-zinc-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-zinc-200 bg-white px-3 text-left text-sm text-zinc-950 outline-none transition-colors hover:bg-zinc-50 focus:border-[#FF5B00] focus:ring-2 focus:ring-[#FF5B00]/15 disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       {...props}
@@ -134,7 +134,7 @@ export function SelectContent({
     <div
       hidden={!open}
       className={cn(
-        "absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-auto rounded-md border border-zinc-800 bg-zinc-950 p-1 text-sm text-zinc-100 shadow-panel",
+        "absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-auto rounded-md border border-zinc-200 bg-white p-1 text-sm text-zinc-950 shadow-panel",
         !open && "hidden",
         className,
       )}
@@ -178,8 +178,8 @@ export function SelectItem({
         setOpen(false)
       }}
       className={cn(
-        "flex min-h-8 w-full items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-left outline-none transition-colors hover:bg-zinc-800 focus:bg-zinc-800",
-        selected ? "text-emerald-100" : "text-zinc-300",
+        "flex min-h-8 w-full items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-left outline-none transition-colors hover:bg-zinc-100 focus:bg-zinc-100",
+        selected ? "text-[#FF5B00]" : "text-zinc-700",
         className,
       )}
     >

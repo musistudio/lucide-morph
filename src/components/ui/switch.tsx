@@ -18,7 +18,7 @@ export function Switch({
   return (
     <label
       className={cn(
-        "relative inline-flex h-6 w-10 cursor-pointer items-center rounded-full border border-zinc-700 bg-zinc-800 transition-colors has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-500",
+        "relative inline-flex h-6 w-10 cursor-pointer items-center rounded-full border border-zinc-300 bg-zinc-200 transition-colors has-[:checked]:border-[#FF5B00] has-[:checked]:bg-[#FF5B00]",
         className,
       )}
     >
@@ -29,7 +29,7 @@ export function Switch({
         className="peer sr-only"
         {...props}
       />
-      <span className="ml-0.5 h-5 w-5 rounded-full bg-zinc-100 transition-transform peer-checked:translate-x-4" />
+      <span className="ml-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-4" />
     </label>
   )
 }

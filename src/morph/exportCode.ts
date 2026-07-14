@@ -73,11 +73,19 @@ type MorphLayer = {
   id: string
   name: string
   from: string
+  loading?: string
   to: string
   fromOpacity: number
+  loadingOpacity?: number
   toOpacity: number
   mode: "stroke" | "fill"
-  strokeWidth?: number
+}
+
+type MorphLoadingDesign = {
+  enabled: boolean
+  label: string
+  rotationDirection: "clockwise" | "counterclockwise"
+  rotationDuration: number
 }
 
 type MorphAsset = {
@@ -88,8 +96,12 @@ type MorphAsset = {
   fromIcon?: string
   toIcon?: string
   viewBox: string
+  strokeLocked?: boolean
+  loading?: MorphLoadingDesign
   layers: MorphLayer[]
 }
+
+type MorphState = "from" | "loading" | "to"
 
 const asset: MorphAsset = ${assetCode}
 
@@ -131,12 +143,14 @@ function easeOutCubic(progress: number) {
   return 1 - Math.pow(1 - progress, 3)
 }
 
-function useAnimatedProgress(active: boolean, duration: number) {
-  const [progress, setProgress] = useState(active ? 1 : 0)
+function useAnimatedProgress(state: MorphState, duration: number) {
+  const [progress, setProgress] = useState(state === "to" ? 1 : 0)
 
   useEffect(() => {
+    if (state === "loading") return
+
     const from = progress
-    const to = active ? 1 : 0
+    const to = state === "to" ? 1 : 0
     const start = performance.now()
     let frame = 0
 
@@ -152,61 +166,165 @@ function useAnimatedProgress(active: boolean, duration: number) {
 
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [active, duration])
+  }, [state, duration])
 
   return progress
 }
 
+function useAnimatedStatePosition(state: MorphState, duration: number) {
+  const statePosition = state === "from" ? 0 : state === "loading" ? 1 : 2
+  const [position, setPosition] = useState(statePosition)
+
+  useEffect(() => {
+    const from = position
+    const to = state === "from" ? 0 : state === "loading" ? 1 : 2
+    const start = performance.now()
+    let frame = 0
+
+    const tick = (now: number) => {
+      const elapsed = Math.min(1, (now - start) / duration)
+      setPosition(from + (to - from) * easeOutCubic(elapsed))
+
+      if (elapsed < 1) frame = requestAnimationFrame(tick)
+    }
+
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [state, duration])
+
+  return position
+}
+
+function layerFrame(layer: MorphLayer, position: number) {
+  if (!layer.loading || layer.loadingOpacity === undefined) {
+    const progress = Math.min(1, Math.max(0, position / 2))
+    return {
+      d: createPathInterpolator(layer.from, layer.to)(progress),
+      opacity:
+        layer.fromOpacity + (layer.toOpacity - layer.fromOpacity) * progress,
+    }
+  }
+
+  const entering = position <= 1
+  const progress = entering ? Math.max(0, position) : Math.min(1, position - 1)
+  const from = entering ? layer.from : layer.loading
+  const to = entering ? layer.loading : layer.to
+  const fromOpacity = entering ? layer.fromOpacity : layer.loadingOpacity
+  const toOpacity = entering ? layer.loadingOpacity : layer.toOpacity
+
+  return {
+    d: createPathInterpolator(from, to)(progress),
+    opacity: fromOpacity + (toOpacity - fromOpacity) * progress,
+  }
+}
+
 export function ${componentName}({
-  active,
+  active = false,
+  state,
   size = 24,
   color = "currentColor",
   strokeWidth = ${settings.strokeWidth},
   duration = ${settings.duration},
   title,
 }: {
-  active: boolean
+  active?: boolean
+  state?: MorphState
   size?: number
   color?: string
   strokeWidth?: number
   duration?: number
   title?: string
 }) {
-  const progress = useAnimatedProgress(active, duration)
+  const hasLoadingMorph = Boolean(
+    asset.loading &&
+      asset.layers.every(
+        (layer) => layer.loading && layer.loadingOpacity !== undefined,
+      ),
+  )
+  const requestedState = state ?? (active ? "to" : "from")
+  const resolvedState =
+    requestedState === "loading" && !hasLoadingMorph ? "from" : requestedState
+  const progress = useAnimatedProgress(resolvedState, duration)
+  const position = useAnimatedStatePosition(resolvedState, duration)
+  const loading = resolvedState === "loading"
 
   return (
-    <svg
-      viewBox={asset.viewBox}
-      width={size}
-      height={size}
+    <span
       role={title ? "img" : "presentation"}
       aria-hidden={title ? undefined : true}
       aria-label={title}
-      style={{ color, overflow: "visible" }}
+      aria-busy={loading}
+      style={{
+        color,
+        display: "inline-grid",
+        height: size,
+        lineHeight: 0,
+        placeItems: "center",
+        position: "relative",
+        width: size,
+      }}
     >
-      {asset.layers.map((layer) => {
-        const d = createPathInterpolator(layer.from, layer.to)(progress)
-        const opacity = layer.fromOpacity + (layer.toOpacity - layer.fromOpacity) * progress
-        const width = layer.strokeWidth ?? strokeWidth
+      <svg
+        aria-hidden="true"
+        viewBox={asset.viewBox}
+        width={size}
+        height={size}
+        style={{
+          gridArea: "1 / 1",
+          overflow: "visible",
+        }}
+      >
+        <g>
+          {loading && hasLoadingMorph && asset.loading && (
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              from="0 12 12"
+              to={
+                asset.loading.rotationDirection === "counterclockwise"
+                  ? "-360 12 12"
+                  : "360 12 12"
+              }
+              dur={asset.loading.rotationDuration + "ms"}
+              repeatCount="indefinite"
+            />
+          )}
+          {asset.layers.map((layer) => {
+            const frame = hasLoadingMorph
+              ? layerFrame(layer, position)
+              : {
+                  d: createPathInterpolator(layer.from, layer.to)(progress),
+                  opacity:
+                    layer.fromOpacity +
+                    (layer.toOpacity - layer.fromOpacity) * progress,
+                }
+            if (layer.mode === "fill" && !asset.strokeLocked) {
+              return (
+                <path
+                  key={layer.id}
+                  d={frame.d}
+                  opacity={frame.opacity}
+                  fill="currentColor"
+                />
+              )
+            }
 
-        if (layer.mode === "fill") {
-          return <path key={layer.id} d={d} opacity={opacity} fill="currentColor" />
-        }
-
-        return (
-          <path
-            key={layer.id}
-            d={d}
-            opacity={opacity}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={width}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        )
-      })}
-    </svg>
+            return (
+              <path
+                key={layer.id}
+                d={frame.d}
+                opacity={frame.opacity}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={strokeWidth}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            )
+          })}
+        </g>
+      </svg>
+    </span>
   )
 }
 `
@@ -216,41 +334,77 @@ function generateVueComponentCode(asset: MorphAsset, settings: EditorSettings) {
   const assetCode = JSON.stringify(asset, null, 2)
 
   return `<template>
-  <svg
-    :viewBox="asset.viewBox"
-    :width="props.size"
-    :height="props.size"
+  <span
     :role="props.title ? 'img' : 'presentation'"
     :aria-hidden="props.title ? undefined : 'true'"
     :aria-label="props.title"
-    :style="{ color: props.color, overflow: 'visible' }"
+    :aria-busy="loading"
+    :style="{
+      color: props.color,
+      display: 'inline-grid',
+      height: props.size + 'px',
+      lineHeight: 0,
+      placeItems: 'center',
+      position: 'relative',
+      width: props.size + 'px',
+    }"
   >
-    <path
-      v-for="layer in asset.layers"
-      :key="layer.id"
-      :d="layerPath(layer)"
-      :opacity="layerOpacity(layer)"
-      :fill="layer.mode === 'fill' ? 'currentColor' : 'none'"
-      :stroke="layer.mode === 'stroke' ? 'currentColor' : undefined"
-      :stroke-width="layer.mode === 'stroke' ? layerStrokeWidth(layer) : undefined"
-      :stroke-linecap="layer.mode === 'stroke' ? 'round' : undefined"
-      :stroke-linejoin="layer.mode === 'stroke' ? 'round' : undefined"
-    />
-  </svg>
+    <svg
+      aria-hidden="true"
+      :viewBox="asset.viewBox"
+      :width="props.size"
+      :height="props.size"
+      :style="{
+        gridArea: '1 / 1',
+        overflow: 'visible',
+      }"
+    >
+      <g>
+        <animateTransform
+          v-if="loading && hasLoadingMorph && asset.loading"
+          attributeName="transform"
+          type="rotate"
+          from="0 12 12"
+          :to="asset.loading.rotationDirection === 'counterclockwise' ? '-360 12 12' : '360 12 12'"
+          :dur="asset.loading.rotationDuration + 'ms'"
+          repeatCount="indefinite"
+        />
+        <path
+          v-for="layer in asset.layers"
+          :key="layer.id"
+          :d="layerPath(layer)"
+          :opacity="layerOpacity(layer)"
+          :fill="layer.mode === 'fill' && !asset.strokeLocked ? 'currentColor' : 'none'"
+          :stroke="layer.mode === 'stroke' || asset.strokeLocked ? 'currentColor' : undefined"
+          :stroke-width="layer.mode === 'stroke' || asset.strokeLocked ? props.strokeWidth : undefined"
+          :stroke-linecap="layer.mode === 'stroke' || asset.strokeLocked ? 'round' : undefined"
+          :stroke-linejoin="layer.mode === 'stroke' || asset.strokeLocked ? 'round' : undefined"
+        />
+      </g>
+    </svg>
+  </span>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from "vue"
+import { computed, onBeforeUnmount, ref, watch } from "vue"
 
 type MorphLayer = {
   id: string
   name: string
   from: string
+  loading?: string
   to: string
   fromOpacity: number
+  loadingOpacity?: number
   toOpacity: number
   mode: "stroke" | "fill"
-  strokeWidth?: number
+}
+
+type MorphLoadingDesign = {
+  enabled: boolean
+  label: string
+  rotationDirection: "clockwise" | "counterclockwise"
+  rotationDuration: number
 }
 
 type MorphAsset = {
@@ -261,14 +415,19 @@ type MorphAsset = {
   fromIcon?: string
   toIcon?: string
   viewBox: string
+  strokeLocked?: boolean
+  loading?: MorphLoadingDesign
   layers: MorphLayer[]
 }
+
+type MorphState = "from" | "loading" | "to"
 
 const asset: MorphAsset = ${assetCode}
 
 const props = withDefaults(
   defineProps<{
-    active: boolean
+    active?: boolean
+    state?: MorphState
     size?: number
     color?: string
     strokeWidth?: number
@@ -276,6 +435,7 @@ const props = withDefaults(
     title?: string
   }>(),
   {
+    active: false,
     size: 24,
     color: "currentColor",
     strokeWidth: ${settings.strokeWidth},
@@ -284,7 +444,23 @@ const props = withDefaults(
 )
 
 const numberRE = /-?\\d*\\.?\\d+(?:e[-+]?\\d+)?/gi
-const progress = ref(props.active ? 1 : 0)
+const hasLoadingMorph = Boolean(
+  asset.loading &&
+    asset.layers.every(
+      (layer) => layer.loading && layer.loadingOpacity !== undefined,
+    ),
+)
+const resolvedState = computed<MorphState>(
+  () => {
+    const requested = props.state ?? (props.active ? "to" : "from")
+    return requested === "loading" && !hasLoadingMorph ? "from" : requested
+  },
+)
+const loading = computed(() => resolvedState.value === "loading")
+const progress = ref(resolvedState.value === "to" ? 1 : 0)
+const position = ref(
+  resolvedState.value === "from" ? 0 : resolvedState.value === "loading" ? 1 : 2,
+)
 let frame = 0
 
 function extractNumbers(path: string) {
@@ -323,16 +499,21 @@ function easeOutCubic(value: number) {
   return 1 - Math.pow(1 - value, 3)
 }
 
-function animateTo(to: number) {
+function animateToState(state: MorphState) {
   cancelAnimationFrame(frame)
 
-  const from = progress.value
+  const fromProgress = progress.value
+  const toProgress = state === "to" ? 1 : state === "from" ? 0 : fromProgress
+  const fromPosition = position.value
+  const toPosition = state === "from" ? 0 : state === "loading" ? 1 : 2
   const start = performance.now()
   const duration = Math.max(1, props.duration)
 
   const tick = (now: number) => {
     const elapsed = Math.min(1, (now - start) / duration)
-    progress.value = from + (to - from) * easeOutCubic(elapsed)
+    const eased = easeOutCubic(elapsed)
+    progress.value = fromProgress + (toProgress - fromProgress) * eased
+    position.value = fromPosition + (toPosition - fromPosition) * eased
 
     if (elapsed < 1) {
       frame = requestAnimationFrame(tick)
@@ -342,21 +523,42 @@ function animateTo(to: number) {
   frame = requestAnimationFrame(tick)
 }
 
+function layerFrame(layer: MorphLayer) {
+  if (!hasLoadingMorph || !layer.loading || layer.loadingOpacity === undefined) {
+    return {
+      d: createPathInterpolator(layer.from, layer.to)(progress.value),
+      opacity:
+        layer.fromOpacity +
+        (layer.toOpacity - layer.fromOpacity) * progress.value,
+    }
+  }
+
+  const entering = position.value <= 1
+  const segmentProgress = entering
+    ? Math.max(0, position.value)
+    : Math.min(1, position.value - 1)
+  const from = entering ? layer.from : layer.loading
+  const to = entering ? layer.loading : layer.to
+  const fromOpacity = entering ? layer.fromOpacity : layer.loadingOpacity
+  const toOpacity = entering ? layer.loadingOpacity : layer.toOpacity
+
+  return {
+    d: createPathInterpolator(from, to)(segmentProgress),
+    opacity: fromOpacity + (toOpacity - fromOpacity) * segmentProgress,
+  }
+}
+
 function layerPath(layer: MorphLayer) {
-  return createPathInterpolator(layer.from, layer.to)(progress.value)
+  return layerFrame(layer).d
 }
 
 function layerOpacity(layer: MorphLayer) {
-  return layer.fromOpacity + (layer.toOpacity - layer.fromOpacity) * progress.value
-}
-
-function layerStrokeWidth(layer: MorphLayer) {
-  return layer.strokeWidth ?? props.strokeWidth
+  return layerFrame(layer).opacity
 }
 
 watch(
-  () => [props.active, props.duration] as const,
-  ([active]) => animateTo(active ? 1 : 0),
+  () => [resolvedState.value, props.duration] as const,
+  ([state]) => animateToState(state),
   { immediate: true },
 )
 
@@ -375,11 +577,19 @@ function generateWebComponentCode(asset: MorphAsset, settings: EditorSettings) {
   id: string
   name: string
   from: string
+  loading?: string
   to: string
   fromOpacity: number
+  loadingOpacity?: number
   toOpacity: number
   mode: "stroke" | "fill"
-  strokeWidth?: number
+}
+
+type MorphLoadingDesign = {
+  enabled: boolean
+  label: string
+  rotationDirection: "clockwise" | "counterclockwise"
+  rotationDuration: number
 }
 
 type MorphAsset = {
@@ -390,8 +600,12 @@ type MorphAsset = {
   fromIcon?: string
   toIcon?: string
   viewBox: string
+  strokeLocked?: boolean
+  loading?: MorphLoadingDesign
   layers: MorphLayer[]
 }
+
+type MorphState = "from" | "loading" | "to"
 
 const asset: MorphAsset = ${assetCode}
 const svgNS = "http://www.w3.org/2000/svg"
@@ -436,6 +650,7 @@ function easeOutCubic(progress: number) {
 export class ${className} extends HTMLElement {
   static observedAttributes = [
     "active",
+    "state",
     "size",
     "color",
     "stroke-width",
@@ -445,6 +660,7 @@ export class ${className} extends HTMLElement {
 
   private frame = 0
   private progress = 0
+  private position = 0
   private root: ShadowRoot | null = null
 
   connectedCallback() {
@@ -452,7 +668,8 @@ export class ${className} extends HTMLElement {
       this.root = this.attachShadow({ mode: "open" })
     }
 
-    this.progress = this.active ? 1 : 0
+    this.progress = this.state === "to" ? 1 : 0
+    this.position = this.state === "from" ? 0 : this.state === "loading" ? 1 : 2
     this.render()
   }
 
@@ -463,8 +680,9 @@ export class ${className} extends HTMLElement {
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
     if (oldValue === newValue || !this.root) return
 
-    if (name === "active" || name === "duration") {
-      this.animateTo(this.active ? 1 : 0)
+    if (name === "active" || name === "state" || name === "duration") {
+      this.renderVisualState()
+      this.animateTo(this.state)
       return
     }
 
@@ -481,6 +699,17 @@ export class ${className} extends HTMLElement {
     } else {
       this.removeAttribute("active")
     }
+  }
+
+  get state(): MorphState {
+    const value = this.getAttribute("state")
+    if (value === "loading" && !this.hasLoadingMorph) return "from"
+    if (value === "from" || value === "loading" || value === "to") return value
+    return this.active ? "to" : "from"
+  }
+
+  set state(value: MorphState) {
+    this.setAttribute("state", value)
   }
 
   get size() {
@@ -506,16 +735,31 @@ export class ${className} extends HTMLElement {
     return this.getAttribute("title") || ""
   }
 
-  private animateTo(to: number) {
+  get hasLoadingMorph() {
+    return Boolean(
+      asset.loading &&
+        asset.layers.every(
+          (layer) => layer.loading && layer.loadingOpacity !== undefined,
+        ),
+    )
+  }
+
+  private animateTo(state: MorphState) {
     cancelAnimationFrame(this.frame)
 
-    const from = this.progress
+    const fromProgress = this.progress
+    const toProgress =
+      state === "to" ? 1 : state === "from" ? 0 : fromProgress
+    const fromPosition = this.position
+    const toPosition = state === "from" ? 0 : state === "loading" ? 1 : 2
     const start = performance.now()
     const duration = Math.max(1, this.duration)
 
     const tick = (now: number) => {
       const elapsed = Math.min(1, (now - start) / duration)
-      this.progress = from + (to - from) * easeOutCubic(elapsed)
+      const eased = easeOutCubic(elapsed)
+      this.progress = fromProgress + (toProgress - fromProgress) * eased
+      this.position = fromPosition + (toPosition - fromPosition) * eased
       this.renderPaths()
 
       if (elapsed < 1) {
@@ -529,52 +773,112 @@ export class ${className} extends HTMLElement {
   private render() {
     if (!this.root) return
 
-    this.root.innerHTML = "<style>:host{display:inline-block;line-height:0}svg{display:block;overflow:visible}</style>"
+    this.root.innerHTML = "<style>:host{display:inline-block;line-height:0}.frame{display:inline-grid;place-items:center;position:relative;line-height:0}.morph{grid-area:1/1}.morph-layers.morph-loading{animation:morph-loading-spin var(--loading-duration) linear infinite;transform-box:view-box;transform-origin:center}@keyframes morph-loading-spin{to{transform:rotate(360deg)}}svg{display:block;overflow:visible}</style>"
+
+    const frame = document.createElement("span")
+    frame.className = "frame"
+    frame.style.color = this.color
+    frame.style.width = this.size + "px"
+    frame.style.height = this.size + "px"
+    frame.setAttribute("role", this.titleText ? "img" : "presentation")
+
+    if (this.titleText) {
+      frame.setAttribute("aria-label", this.titleText)
+    } else {
+      frame.setAttribute("aria-hidden", "true")
+    }
 
     const svg = document.createElementNS(svgNS, "svg")
+    svg.classList.add("morph")
     svg.setAttribute("viewBox", asset.viewBox)
     svg.setAttribute("width", String(this.size))
     svg.setAttribute("height", String(this.size))
-    svg.setAttribute("role", this.titleText ? "img" : "presentation")
-    svg.style.color = this.color
+    svg.setAttribute("aria-hidden", "true")
 
-    if (this.titleText) {
-      svg.setAttribute("aria-label", this.titleText)
-    } else {
-      svg.setAttribute("aria-hidden", "true")
-    }
+    const morphLayers = document.createElementNS(svgNS, "g")
+    morphLayers.classList.add("morph-layers")
+    svg.append(morphLayers)
 
-    this.root.append(svg)
+    frame.append(svg)
+    this.root.append(frame)
+    this.renderVisualState()
     this.renderPaths()
   }
 
-  private renderPaths() {
-    const svg = this.root?.querySelector("svg")
-    if (!svg) return
+  private renderVisualState() {
+    const frame = this.root?.querySelector<HTMLElement>(".frame")
+    const morphLayers = this.root?.querySelector<SVGGElement>(".morph-layers")
+    if (!frame || !morphLayers) return
 
-    while (svg.firstChild) {
-      svg.removeChild(svg.firstChild)
+    const loading = this.state === "loading"
+    frame.style.setProperty(
+      "--loading-duration",
+      (asset.loading?.rotationDuration ?? 900) + "ms",
+    )
+    frame.setAttribute("aria-busy", String(loading))
+    morphLayers.classList.toggle("morph-loading", loading && this.hasLoadingMorph)
+    morphLayers.style.animationDirection =
+      asset.loading?.rotationDirection === "counterclockwise"
+        ? "reverse"
+        : "normal"
+  }
+
+  private renderPaths() {
+    const morphLayers = this.root?.querySelector(".morph-layers")
+    if (!morphLayers) return
+
+    while (morphLayers.firstChild) {
+      morphLayers.removeChild(morphLayers.firstChild)
     }
 
     for (const layer of asset.layers) {
       const path = document.createElementNS(svgNS, "path")
-      const d = createPathInterpolator(layer.from, layer.to)(this.progress)
-      const opacity = layer.fromOpacity + (layer.toOpacity - layer.fromOpacity) * this.progress
+      const hasLayerLoading =
+        this.hasLoadingMorph &&
+        layer.loading !== undefined &&
+        layer.loadingOpacity !== undefined
+      const entering = this.position <= 1
+      const segmentProgress = entering
+        ? Math.max(0, this.position)
+        : Math.min(1, this.position - 1)
+      const from = hasLayerLoading
+        ? entering
+          ? layer.from
+          : layer.loading!
+        : layer.from
+      const to = hasLayerLoading
+        ? entering
+          ? layer.loading!
+          : layer.to
+        : layer.to
+      const progress = hasLayerLoading ? segmentProgress : this.progress
+      const fromOpacity = hasLayerLoading
+        ? entering
+          ? layer.fromOpacity
+          : layer.loadingOpacity!
+        : layer.fromOpacity
+      const toOpacity = hasLayerLoading
+        ? entering
+          ? layer.loadingOpacity!
+          : layer.toOpacity
+        : layer.toOpacity
+      const d = createPathInterpolator(from, to)(progress)
+      const opacity = fromOpacity + (toOpacity - fromOpacity) * progress
 
       path.setAttribute("d", d)
       path.setAttribute("opacity", String(opacity))
 
-      if (layer.mode === "fill") {
+      if (layer.mode === "fill" && !asset.strokeLocked) {
         path.setAttribute("fill", "currentColor")
       } else {
         path.setAttribute("fill", "none")
         path.setAttribute("stroke", "currentColor")
-        path.setAttribute("stroke-width", String(layer.strokeWidth ?? this.strokeWidth))
+        path.setAttribute("stroke-width", String(this.strokeWidth))
         path.setAttribute("stroke-linecap", "round")
         path.setAttribute("stroke-linejoin", "round")
       }
 
-      svg.append(path)
+      morphLayers.append(path)
     }
   }
 }

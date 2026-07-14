@@ -1,13 +1,45 @@
 {
-  "name": "morph-icon",
-  "private": true,
+  "name": "lucide-morph",
   "version": "0.1.0",
   "license": "MIT",
   "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist-package",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist-package/index.js",
+  "module": "./dist-package/index.js",
+  "types": "./dist-package/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist-package/index.d.ts",
+      "import": "./dist-package/index.js"
+    },
+    "./react": {
+      "types": "./dist-package/react.d.ts",
+      "import": "./dist-package/react.js"
+    },
+    "./vue": {
+      "types": "./dist-package/vue.d.ts",
+      "import": "./dist-package/vue.js"
+    },
+    "./webcomponent": {
+      "types": "./dist-package/webcomponent.d.ts",
+      "import": "./dist-package/webcomponent.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
-    "preview": "vite preview --host 127.0.0.1"
+    "build:package": "vite build --config vite.package.config.ts && tsc -p tsconfig.package.json",
+    "prepublishOnly": "npm run build:package",
+    "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
@@ -16,6 +48,18 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^2.6.0"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "vue": ">=3.3"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.1",

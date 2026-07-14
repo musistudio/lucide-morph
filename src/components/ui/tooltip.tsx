@@ -23,7 +23,7 @@ export function Tooltip({
       {children}
       <span
         className={cn(
-          "pointer-events-none absolute top-full z-50 mt-2 hidden whitespace-nowrap rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-200 opacity-0 shadow-panel transition-opacity group-hover:block group-hover:opacity-100 group-focus-within:block group-focus-within:opacity-100",
+          "pointer-events-none absolute top-full z-50 mt-2 hidden whitespace-nowrap rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-700 opacity-0 shadow-panel transition-opacity group-hover:block group-hover:opacity-100 group-focus-within:block group-focus-within:opacity-100",
           alignClassName,
           className,
         )}

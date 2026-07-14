@@ -8,15 +8,12 @@ import {
 } from "react"
 import {
   Check,
-  Code2,
   Copy,
   icons as lucideIcons,
   Layers3,
   Pause,
   Play,
   Search,
-  Settings,
-  Sparkles,
   Upload,
   X,
   type LucideIcon,
@@ -34,17 +31,10 @@ import {
 } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
-import { Tooltip } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import {
-  generateMorphLayersWithAgent,
-  type AgentMorphResult,
-} from "@/morph/agent"
-import {
   componentNameForAsset,
-  exportTargets,
   generateComponentCode,
-  type ExportTarget,
 } from "@/morph/exportCode"
 import { MorphSvg } from "@/morph/MorphSvg"
 import { cloneAsset, getPresetById, morphPresets } from "@/morph/presets"
@@ -55,14 +45,20 @@ const defaultAnimationDuration = 420
 const animationDurationMin = 120
 const animationDurationMax = 1600
 const animationDurationStep = 20
+const defaultLoadingDuration = 3000
+const loadingDurationMin = 500
+const loadingDurationMax = 10000
+const loadingDurationStep = 100
 
 const defaultSettings: EditorSettings = {
   componentName: "MenuToXIcon",
-  color: "#f6f1e8",
+  color: "#232323",
   duration: defaultAnimationDuration,
-  size: 220,
+  loadingDuration: defaultLoadingDuration,
+  loadingEnabled: true,
+  size: 180,
   strokeWidth: 2,
-  showOnion: true,
+  showOnion: false,
 }
 
 function normalizeDuration(value: number) {
@@ -75,42 +71,34 @@ function normalizeDuration(value: number) {
   )
 }
 
+function normalizeLoadingDuration(value: number) {
+  if (!Number.isFinite(value)) return defaultLoadingDuration
+
+  return (
+    Math.round(
+      clamp(value, loadingDurationMin, loadingDurationMax) / loadingDurationStep,
+    ) * loadingDurationStep
+  )
+}
+
 type IconPickTarget = "from" | "to"
 type PreviewMode = "morph" | "lucide"
+type AsyncPreviewPhase =
+  | "from"
+  | "entering-loading"
+  | "loading"
+  | "exiting-loading"
+  | "to"
 type UploadedSvg = {
   name: string
   markup: string
 }
-type AgentState =
-  | { status: "idle" }
-  | { status: "running"; message: string }
-  | { status: "success"; message: string; rationale: string }
-  | { status: "error"; message: string }
 
 const allLucideIconNames = Object.keys(lucideIcons)
   .filter((name) => /^[A-Z]/.test(name))
   .sort((first, second) => first.localeCompare(second))
 
 const lucideIconNameSet = new Set(allLucideIconNames)
-const openAIKeyStorageKey = "morph-icon.openai-key"
-const openAIBaseUrlStorageKey = "morph-icon.openai-base-url"
-const openAIModelStorageKey = "morph-icon.openai-model"
-const openAIStreamStorageKey = "morph-icon.openai-stream"
-const defaultOpenAIBaseUrl = "https://api.openai.com/v1"
-const defaultOpenAIModel = "gpt-5.4"
-
-function getViteEnv(name: string) {
-  const meta = import.meta as ImportMeta & {
-    env?: Record<string, string | undefined>
-  }
-
-  return meta.env?.[name] ?? ""
-}
-
-function getStoredValue(key: string, fallback = "") {
-  if (typeof window === "undefined") return fallback
-  return window.localStorage.getItem(key) || fallback
-}
 
 function splitIconName(name: string) {
   return name
@@ -184,6 +172,42 @@ function sanitizeSvgMarkup(markup: string) {
   return new XMLSerializer().serializeToString(svg)
 }
 
+async function writeClipboardText(text: string) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return
+    } catch {
+      // Fall through to the selection-based copy path.
+    }
+  }
+
+  const textarea = document.createElement("textarea")
+  const selection = document.getSelection()
+  const selectedRange =
+    selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null
+
+  textarea.value = text
+  textarea.setAttribute("readonly", "true")
+  textarea.style.position = "fixed"
+  textarea.style.left = "-9999px"
+  textarea.style.top = "0"
+  document.body.append(textarea)
+  textarea.select()
+
+  const copied = document.execCommand("copy")
+  textarea.remove()
+
+  selection?.removeAllRanges()
+  if (selectedRange) {
+    selection?.addRange(selectedRange)
+  }
+
+  if (!copied) {
+    throw new Error("Copy failed.")
+  }
+}
+
 function getLucideIcon(name: string | undefined) {
   if (!name) return undefined
   return lucideIcons[name as keyof typeof lucideIcons] as LucideIcon | undefined
@@ -195,6 +219,10 @@ function iconNameToLabel(name: string | undefined, fallback: string) {
 
 function easeOutCubic(value: number) {
   return 1 - Math.pow(1 - value, 3)
+}
+
+function strokeWidthForScale(strokeWidth: number, scale: number) {
+  return strokeWidth / Math.max(scale, 0.001)
 }
 
 function Field({
@@ -210,146 +238,6 @@ function Field({
     <div className={cn("space-y-1.5", className)}>
       <Label>{label}</Label>
       {children}
-    </div>
-  )
-}
-
-function SectionTitle({
-  icon: Icon,
-  title,
-  meta,
-  className,
-}: {
-  icon: LucideIcon
-  title: string
-  meta?: ReactNode
-  className?: string
-}) {
-  return (
-    <div className={cn("flex min-h-9 items-center justify-between gap-3", className)}>
-      <div className="flex min-w-0 items-center gap-2">
-        <Icon className="h-4 w-4 shrink-0 text-emerald-300" />
-        <h2 className="truncate text-sm font-semibold text-zinc-100">{title}</h2>
-      </div>
-      {meta}
-    </div>
-  )
-}
-
-type CodeToken = {
-  text: string
-  className?: string
-}
-
-const codeTokenPattern =
-  /(<!--[\s\S]*?-->|\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|\b(?:as|async|await|break|case|catch|class|const|default|defineProps|else|export|extends|false|for|from|function|get|if|import|in|interface|let|new|null|of|private|return|set|static|throw|true|try|type|undefined|watch|while|withDefaults)\b|\b\d+(?:\.\d+)?\b|<\/?[A-Za-z][\w:.-]*|[A-Za-z_:][\w:.-]*(?==))/g
-
-const codeKeywordPattern =
-  /^(?:as|async|await|break|case|catch|class|const|default|defineProps|else|export|extends|false|for|from|function|get|if|import|in|interface|let|new|null|of|private|return|set|static|throw|true|try|type|undefined|watch|while|withDefaults)$/
-
-function classNameForCodeToken(token: string) {
-  if (
-    token.startsWith("//") ||
-    token.startsWith("/*") ||
-    token.startsWith("<!--")
-  ) {
-    return "text-zinc-500 italic"
-  }
-
-  if (
-    token.startsWith('"') ||
-    token.startsWith("'") ||
-    token.startsWith("`")
-  ) {
-    return "text-amber-300"
-  }
-
-  if (token.startsWith("<")) return "text-sky-300"
-  if (codeKeywordPattern.test(token)) return "text-fuchsia-300"
-  if (/^\d/.test(token)) return "text-violet-300"
-  if (/^[A-Za-z_:][\w:.-]*$/.test(token)) return "text-emerald-300"
-
-  return undefined
-}
-
-function tokenizeCode(code: string) {
-  const tokens: CodeToken[] = []
-  let lastIndex = 0
-
-  codeTokenPattern.lastIndex = 0
-
-  for (const match of code.matchAll(codeTokenPattern)) {
-    const text = match[0]
-    const index = match.index ?? 0
-
-    if (index > lastIndex) {
-      tokens.push({ text: code.slice(lastIndex, index) })
-    }
-
-    tokens.push({ text, className: classNameForCodeToken(text) })
-    lastIndex = index + text.length
-  }
-
-  if (lastIndex < code.length) {
-    tokens.push({ text: code.slice(lastIndex) })
-  }
-
-  return tokens
-}
-
-function CodePreview({
-  code,
-  copyState,
-  onCopy,
-}: {
-  code: string
-  copyState: "idle" | "copied"
-  onCopy: () => void
-}) {
-  const tokens = useMemo(() => tokenizeCode(code), [code])
-  const copied = copyState === "copied"
-
-  return (
-    <div className="relative mt-4">
-      <Button
-        variant="secondary"
-        size="iconSm"
-        onClick={onCopy}
-        aria-label={copied ? "Copied" : "Copy code"}
-        className="absolute right-2 top-2 z-10 border border-zinc-700 bg-zinc-900/95 shadow-panel"
-      >
-        <span className="relative h-4 w-4 overflow-hidden">
-          <Copy
-            className={cn(
-              "absolute inset-0 h-4 w-4 transition-all duration-200 ease-out",
-              copied
-                ? "scale-50 rotate-45 opacity-0"
-                : "scale-100 rotate-0 opacity-100",
-            )}
-          />
-          <Check
-            className={cn(
-              "absolute inset-0 h-4 w-4 text-emerald-300 transition-all duration-200 ease-out",
-              copied
-                ? "scale-100 rotate-0 opacity-100"
-                : "scale-50 -rotate-45 opacity-0",
-            )}
-          />
-        </span>
-      </Button>
-      <pre
-        className="code-scroll h-[calc(100vh-330px)] min-h-96 overflow-auto rounded-md border border-zinc-800 bg-zinc-950 p-3 pt-12 pr-12 font-mono text-[11px] leading-relaxed text-zinc-300 outline-none"
-        aria-label="Generated code"
-        tabIndex={0}
-      >
-        <code>
-          {tokens.map((token, index) => (
-            <span key={index} className={token.className}>
-              {token.text}
-            </span>
-          ))}
-        </code>
-      </pre>
     </div>
   )
 }
@@ -374,7 +262,7 @@ function LucideIconPreview({
   return (
     <span
       className={cn(
-        "grid shrink-0 place-items-center text-zinc-200",
+        "grid shrink-0 place-items-center text-zinc-950",
         className,
       )}
       style={{ color }}
@@ -387,7 +275,7 @@ function LucideIconPreview({
       ) : Icon ? (
         <Icon aria-hidden="true" size={size} strokeWidth={strokeWidth} />
       ) : (
-        <span className="h-5 w-5 rounded-md border border-dashed border-zinc-700" />
+        <span className="h-5 w-5 rounded-md border border-dashed border-zinc-300" />
       )}
     </span>
   )
@@ -415,10 +303,10 @@ function IconReferenceCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex min-w-0 items-center gap-3 rounded-md border bg-zinc-950 p-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-emerald-500",
+        "flex min-w-0 items-center gap-3 rounded-md border bg-white p-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#FF5B00]/30",
         active
-          ? "border-emerald-600 bg-emerald-950/40"
-          : "border-zinc-800 hover:border-zinc-700",
+          ? "border-[#FF5B00] bg-[#FF5B00]/5"
+          : "border-zinc-200 hover:border-zinc-300",
       )}
     >
       <LucideIconPreview
@@ -426,13 +314,13 @@ function IconReferenceCard({
         svgMarkup={svgMarkup}
         color={color}
         size={28}
-        className="h-10 w-10 rounded-md border border-zinc-800 bg-zinc-900"
+        className="h-10 w-10 rounded-md border border-zinc-200 bg-zinc-50"
       />
       <span className="min-w-0">
-        <span className="block text-xs font-medium uppercase text-zinc-500">
+        <span className="block text-xs font-medium uppercase text-zinc-400">
           {target}
         </span>
-        <span className="block truncate text-sm font-medium text-zinc-100">
+        <span className="block truncate text-sm font-medium text-zinc-950">
           {label}
         </span>
       </span>
@@ -453,7 +341,7 @@ function LucideIconGrid({
 }) {
   if (iconNames.length === 0) {
     return (
-      <div className="grid min-h-24 flex-1 place-items-center rounded-md border border-zinc-800 bg-zinc-950 text-sm text-zinc-500">
+      <div className="grid min-h-24 flex-1 place-items-center rounded-md border border-zinc-200 bg-white text-sm text-zinc-500">
         No icons
       </div>
     )
@@ -474,10 +362,10 @@ function LucideIconGrid({
             aria-label={`Select ${label}`}
             onClick={() => onPick(name)}
             className={cn(
-              "grid min-h-20 place-items-center gap-1 rounded-md border bg-zinc-950 px-2 py-2 text-center text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-emerald-500",
+              "grid min-h-20 place-items-center gap-1 rounded-md border bg-white px-2 py-2 text-center text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#FF5B00]/30",
               active
-                ? "border-emerald-600 bg-emerald-950/50 text-emerald-100"
-                : "border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-100",
+                ? "border-[#FF5B00] bg-[#FF5B00]/5 text-[#9A3412]"
+                : "border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-950",
             )}
           >
             {Icon && (
@@ -517,6 +405,8 @@ function LucideTransitionPreview({
   const ToIcon = getLucideIcon(toIcon)
   const fromOpacity = clamp(1 - progress * 1.25)
   const toOpacity = clamp((progress - 0.2) / 0.8)
+  const fromScale = 1 - progress * 0.14
+  const toScale = 0.86 + progress * 0.14
 
   return (
     <div
@@ -532,11 +422,11 @@ function LucideTransitionPreview({
         <FromIcon
           aria-hidden="true"
           size={size}
-          strokeWidth={strokeWidth}
+          strokeWidth={strokeWidthForScale(strokeWidth, fromScale)}
           className="col-start-1 row-start-1 transition-none"
           style={{
             opacity: fromOpacity,
-            transform: `scale(${1 - progress * 0.14}) rotate(${progress * 8}deg)`,
+            transform: `scale(${fromScale}) rotate(${progress * 8}deg)`,
             transformOrigin: "center",
           }}
         />
@@ -545,19 +435,33 @@ function LucideTransitionPreview({
         <ToIcon
           aria-hidden="true"
           size={size}
-          strokeWidth={strokeWidth}
+          strokeWidth={strokeWidthForScale(strokeWidth, toScale)}
           className="col-start-1 row-start-1 transition-none"
           style={{
             opacity: toOpacity,
-            transform: `scale(${0.86 + progress * 0.14}) rotate(${
-              (1 - progress) * -8
-            }deg)`,
+            transform: `scale(${toScale}) rotate(${(1 - progress) * -8}deg)`,
             transformOrigin: "center",
           }}
         />
       )}
     </div>
   )
+}
+
+function asyncPhaseLabel(phase: AsyncPreviewPhase) {
+  switch (phase) {
+    case "entering-loading":
+      return "Entering loading"
+    case "loading":
+      return "Loading"
+    case "exiting-loading":
+      return "Completing"
+    case "to":
+      return "Complete"
+    case "from":
+    default:
+      return "Ready"
+  }
 }
 
 function StageReferenceStrip({
@@ -575,7 +479,7 @@ function StageReferenceStrip({
 }) {
   return (
     <div className="absolute right-16 top-4 hidden gap-2 sm:flex">
-      <div className="flex items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/80 px-2 py-1.5 text-xs text-zinc-400 backdrop-blur">
+      <div className="flex items-center gap-2 rounded-md border border-zinc-200 bg-white/85 px-2 py-1.5 text-xs text-zinc-500 backdrop-blur">
         <LucideIconPreview
           name={asset.fromIcon}
           svgMarkup={fromSvgMarkup}
@@ -585,7 +489,7 @@ function StageReferenceStrip({
         />
         <span className="max-w-24 truncate">{asset.fromLabel}</span>
       </div>
-      <div className="flex items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/80 px-2 py-1.5 text-xs text-zinc-400 backdrop-blur">
+      <div className="flex items-center gap-2 rounded-md border border-zinc-200 bg-white/85 px-2 py-1.5 text-xs text-zinc-500 backdrop-blur">
         <LucideIconPreview
           name={asset.toIcon}
           svgMarkup={toSvgMarkup}
@@ -596,6 +500,111 @@ function StageReferenceStrip({
         <span className="max-w-24 truncate">{asset.toLabel}</span>
       </div>
     </div>
+  )
+}
+
+function MorphPresetCard({
+  active,
+  asset,
+  color,
+  copied,
+  onClick,
+  onCopyCode,
+  strokeWidth,
+}: {
+  active: boolean
+  asset: MorphAsset
+  color: string
+  copied: boolean
+  onClick: () => void
+  onCopyCode: () => void
+  strokeWidth: number
+}) {
+  const [hovered, setHovered] = useState(false)
+  const [hoverProgress, setHoverProgress] = useState(0)
+  const hoverProgressRef = useRef(0)
+
+  useEffect(() => {
+    const startProgress = hoverProgressRef.current
+    const targetProgress = hovered ? 1 : 0
+
+    if (Math.abs(startProgress - targetProgress) < 0.001) {
+      setHoverProgress(targetProgress)
+      hoverProgressRef.current = targetProgress
+      return
+    }
+
+    const start = performance.now()
+    let frame = 0
+
+    const tick = (now: number) => {
+      const elapsed = clamp((now - start) / defaultAnimationDuration)
+      const nextProgress =
+        startProgress + (targetProgress - startProgress) * easeOutCubic(elapsed)
+
+      hoverProgressRef.current = nextProgress
+      setHoverProgress(nextProgress)
+
+      if (elapsed < 1) {
+        frame = requestAnimationFrame(tick)
+      }
+    }
+
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [hovered])
+
+  return (
+    <article
+      className={cn(
+        "group relative aspect-[1/1.08] min-h-44 rounded-lg border bg-white text-center transition-all duration-200",
+        active
+          ? "border-[#FF5B00] shadow-[0_18px_50px_rgba(255,91,0,0.18)]"
+          : "border-zinc-100 hover:-translate-y-0.5 hover:border-zinc-200 hover:shadow-[0_18px_45px_rgba(24,24,27,0.08)]",
+      )}
+      onBlur={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onMouseMove={() => setHovered(true)}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        size="iconSm"
+        onClick={onCopyCode}
+        className="absolute right-2 top-2 z-10 h-8 w-8 border border-zinc-100 bg-white/85 opacity-90 shadow-sm backdrop-blur hover:bg-white hover:opacity-100"
+        aria-label={`Copy ${asset.name} code`}
+      >
+        {copied ? (
+          <Check className="h-4 w-4 text-[#FF5B00]" />
+        ) : (
+          <Copy className="h-4 w-4" />
+        )}
+      </Button>
+      <button
+        type="button"
+        aria-pressed={active}
+        onClick={onClick}
+        className="grid h-full w-full place-items-center rounded-lg p-4 outline-none focus-visible:ring-2 focus-visible:ring-[#FF5B00]/30"
+      >
+        <span className="grid h-20 w-20 place-items-center">
+          <MorphSvg
+            asset={asset}
+            progress={hoverProgress}
+            size={58}
+            color={color}
+            strokeWidth={strokeWidth}
+            showOnion={false}
+          />
+        </span>
+        <span className="mt-4 line-clamp-2 block max-w-full break-words font-mono text-xs leading-5 tracking-normal text-zinc-400 transition-colors group-hover:text-zinc-700">
+          {toKebab(asset.name)}
+        </span>
+      </button>
+    </article>
   )
 }
 
@@ -674,42 +683,36 @@ export default function App() {
   const [selectedPreset, setSelectedPreset] = useState(morphPresets[0].id)
   const [settings, setSettings] = useState(defaultSettings)
   const [durationInput, setDurationInput] = useState(String(defaultSettings.duration))
+  const [loadingDurationInput, setLoadingDurationInput] = useState(
+    String(defaultSettings.loadingDuration),
+  )
   const [progress, setProgress] = useState(0)
   const [loop, setLoop] = useState(false)
-  const [copyState, setCopyState] = useState<"idle" | "copied">("idle")
+  const [asyncPhase, setAsyncPhase] = useState<AsyncPreviewPhase>("from")
+  const [loadingPresence, setLoadingPresence] = useState(0)
+  const [galleryCopyId, setGalleryCopyId] = useState<string | null>(null)
   const [iconSearch, setIconSearch] = useState("")
+  const [presetSearch, setPresetSearch] = useState("")
   const [iconPickerTarget, setIconPickerTarget] =
     useState<IconPickTarget | null>(null)
-  const [exportTarget, setExportTarget] = useState<ExportTarget>("react")
   const [uploadedSvgs, setUploadedSvgs] = useState<
     Partial<Record<IconPickTarget, UploadedSvg>>
   >({})
   const [previewMode, setPreviewMode] = useState<PreviewMode>("morph")
-  const [agentState, setAgentState] = useState<AgentState>({ status: "idle" })
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [openAIKey, setOpenAIKey] = useState(() =>
-    getStoredValue(openAIKeyStorageKey, getViteEnv("VITE_OPENAI_API_KEY")),
-  )
-  const [agentBaseUrl, setAgentBaseUrl] = useState(() =>
-    getStoredValue(
-      openAIBaseUrlStorageKey,
-      getViteEnv("VITE_OPENAI_BASE_URL") || defaultOpenAIBaseUrl,
-    ),
-  )
-  const [agentModel, setAgentModel] = useState(() =>
-    getStoredValue(
-      openAIModelStorageKey,
-      getViteEnv("VITE_OPENAI_MODEL") || defaultOpenAIModel,
-    ),
-  )
-  const [agentStream, setAgentStream] = useState(
-    () => getStoredValue(openAIStreamStorageKey, "true") !== "false",
-  )
-  const lucideProbeRef = useRef<HTMLDivElement>(null)
   const fromSvgInputRef = useRef<HTMLInputElement>(null)
   const toSvgInputRef = useRef<HTMLInputElement>(null)
+  const asyncFrameRef = useRef(0)
+  const asyncTimeoutRef = useRef(0)
+  const asyncTokenRef = useRef(0)
+  const progressRef = useRef(progress)
+  const loadingPresenceRef = useRef(loadingPresence)
 
-  usePreviewAnimation(progress, setProgress, settings.duration, loop)
+  usePreviewAnimation(
+    progress,
+    setProgress,
+    settings.duration,
+    loop && !settings.loadingEnabled,
+  )
 
   const filteredIconNames = useMemo(() => {
     const query = normalizeSearch(iconSearch)
@@ -726,14 +729,23 @@ export default function App() {
       )
     })
   }, [iconSearch])
-  const exportCode = useMemo(
-    () => generateComponentCode(asset, settings, exportTarget),
-    [asset, settings, exportTarget],
-  )
-  const AgentFromIcon = getLucideIcon(asset.fromIcon)
-  const AgentToIcon = getLucideIcon(asset.toIcon)
-  const hasFromSource = Boolean(asset.fromIcon || uploadedSvgs.from)
-  const hasToSource = Boolean(asset.toIcon || uploadedSvgs.to)
+  const filteredPresets = useMemo(() => {
+    const query = normalizeSearch(presetSearch)
+
+    if (!query) {
+      return morphPresets
+    }
+
+    return morphPresets.filter((preset) =>
+      [
+        preset.name,
+        preset.fromLabel,
+        preset.toLabel,
+        preset.fromIcon ?? "",
+        preset.toIcon ?? "",
+      ].some((value) => normalizeSearch(value).includes(query)),
+    )
+  }, [presetSearch])
   const iconPickerLabel = iconPickerTarget
     ? iconPickerTarget === "from"
       ? asset.fromLabel
@@ -744,6 +756,30 @@ export default function App() {
       ? asset.fromIcon
       : asset.toIcon
     : undefined
+  const asyncPreviewRunning =
+    asyncPhase === "entering-loading" ||
+    asyncPhase === "loading" ||
+    asyncPhase === "exiting-loading"
+  const hasLoadingDesign = Boolean(
+    previewMode === "morph" &&
+      asset.loading &&
+      asset.layers.length > 0 &&
+      asset.layers.every(
+        (layer) => layer.loading && layer.loadingOpacity !== undefined,
+      ),
+  )
+  const showingLoadingEntry =
+    asyncPhase === "entering-loading" ||
+    asyncPhase === "loading" ||
+    (asyncPhase === "from" && loadingPresence > 0)
+  const loadingSegment =
+    asyncPhase === "exiting-loading"
+      ? "loading-to"
+      : showingLoadingEntry
+        ? "from-loading"
+        : "direct"
+  const loadingProgress =
+    loadingSegment === "from-loading" ? loadingPresence : progress
 
   function updateDuration(value: number) {
     const duration = normalizeDuration(value)
@@ -755,8 +791,22 @@ export default function App() {
     setDurationInput(String(duration))
   }
 
+  function updateLoadingDuration(value: number) {
+    const loadingDuration = normalizeLoadingDuration(value)
+
+    setSettings((current) => ({
+      ...current,
+      loadingDuration,
+    }))
+    setLoadingDurationInput(String(loadingDuration))
+  }
+
   function commitDurationInput() {
     updateDuration(Number(durationInput))
+  }
+
+  function commitLoadingDurationInput() {
+    updateLoadingDuration(Number(loadingDurationInput))
   }
 
   useEffect(() => {
@@ -764,44 +814,164 @@ export default function App() {
   }, [settings.duration])
 
   useEffect(() => {
-    if (!openAIKey.trim()) {
-      window.localStorage.removeItem(openAIKeyStorageKey)
-      return
-    }
-
-    window.localStorage.setItem(openAIKeyStorageKey, openAIKey)
-  }, [openAIKey])
+    setLoadingDurationInput(String(settings.loadingDuration))
+  }, [settings.loadingDuration])
 
   useEffect(() => {
-    const baseUrl = agentBaseUrl.trim()
-
-    if (!baseUrl || baseUrl === defaultOpenAIBaseUrl) {
-      window.localStorage.removeItem(openAIBaseUrlStorageKey)
-      return
-    }
-
-    window.localStorage.setItem(openAIBaseUrlStorageKey, agentBaseUrl)
-  }, [agentBaseUrl])
+    progressRef.current = progress
+  }, [progress])
 
   useEffect(() => {
-    const model = agentModel.trim()
+    loadingPresenceRef.current = loadingPresence
+  }, [loadingPresence])
 
-    if (!model || model === defaultOpenAIModel) {
-      window.localStorage.removeItem(openAIModelStorageKey)
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(asyncFrameRef.current)
+      window.clearTimeout(asyncTimeoutRef.current)
+    },
+    [],
+  )
+
+  function stopAsyncTimeline() {
+    cancelAnimationFrame(asyncFrameRef.current)
+    window.clearTimeout(asyncTimeoutRef.current)
+  }
+
+  function setPreviewProgress(value: number) {
+    progressRef.current = value
+    setProgress(value)
+  }
+
+  function setLoaderPresence(value: number) {
+    loadingPresenceRef.current = value
+    setLoadingPresence(value)
+  }
+
+  function animateAsyncFrame(
+    token: number,
+    duration: number,
+    update: (easedProgress: number) => void,
+    onComplete: () => void,
+  ) {
+    const start = performance.now()
+
+    const tick = (now: number) => {
+      if (token !== asyncTokenRef.current) return
+
+      const elapsed = clamp((now - start) / Math.max(1, duration))
+      update(easeOutCubic(elapsed))
+
+      if (elapsed < 1) {
+        asyncFrameRef.current = requestAnimationFrame(tick)
+      } else {
+        onComplete()
+      }
+    }
+
+    asyncFrameRef.current = requestAnimationFrame(tick)
+  }
+
+  function resetAsyncPreview(nextProgress = 0) {
+    asyncTokenRef.current += 1
+    stopAsyncTimeline()
+    setLoaderPresence(0)
+    setPreviewProgress(nextProgress)
+    setAsyncPhase(nextProgress >= 0.5 ? "to" : "from")
+  }
+
+  function startAsyncPreview() {
+    if (!hasLoadingDesign) {
       return
     }
 
-    window.localStorage.setItem(openAIModelStorageKey, agentModel)
-  }, [agentModel])
+    const token = asyncTokenRef.current + 1
+    asyncTokenRef.current = token
+    stopAsyncTimeline()
+    setLoop(false)
 
-  useEffect(() => {
-    if (agentStream) {
-      window.localStorage.removeItem(openAIStreamStorageKey)
+    const enterLoading = () => {
+      if (token !== asyncTokenRef.current) return
+
+      const fromPresence = loadingPresenceRef.current
+      setAsyncPhase("entering-loading")
+      animateAsyncFrame(
+        token,
+        settings.duration,
+        (value) => setLoaderPresence(fromPresence + (1 - fromPresence) * value),
+        () => {
+          setLoaderPresence(1)
+          setAsyncPhase("loading")
+          asyncTimeoutRef.current = window.setTimeout(() => {
+            if (token !== asyncTokenRef.current) return
+
+            const fromProgress = progressRef.current
+            const fromPresence = loadingPresenceRef.current
+            setAsyncPhase("exiting-loading")
+            animateAsyncFrame(
+              token,
+              settings.duration,
+              (value) => {
+                setPreviewProgress(fromProgress + (1 - fromProgress) * value)
+                setLoaderPresence(fromPresence * (1 - value))
+              },
+              () => {
+                setPreviewProgress(1)
+                setLoaderPresence(0)
+                setAsyncPhase("to")
+              },
+            )
+          }, settings.loadingDuration)
+        },
+      )
+    }
+
+    const fromProgress = progressRef.current
+    const fromPresence = loadingPresenceRef.current
+    setAsyncPhase("from")
+
+    if (fromProgress <= 0.001 && fromPresence <= 0.001) {
+      setPreviewProgress(0)
+      enterLoading()
       return
     }
 
-    window.localStorage.setItem(openAIStreamStorageKey, "false")
-  }, [agentStream])
+    animateAsyncFrame(
+      token,
+      settings.duration,
+      (value) => {
+        setPreviewProgress(fromProgress * (1 - value))
+        setLoaderPresence(fromPresence * (1 - value))
+      },
+      () => {
+        setPreviewProgress(0)
+        setLoaderPresence(0)
+        enterLoading()
+      },
+    )
+  }
+
+  function cancelAsyncPreview() {
+    const token = asyncTokenRef.current + 1
+    asyncTokenRef.current = token
+    stopAsyncTimeline()
+
+    const fromProgress = progressRef.current
+    const fromPresence = loadingPresenceRef.current
+    setAsyncPhase("from")
+    animateAsyncFrame(
+      token,
+      settings.duration,
+      (value) => {
+        setPreviewProgress(fromProgress * (1 - value))
+        setLoaderPresence(fromPresence * (1 - value))
+      },
+      () => {
+        setPreviewProgress(0)
+        setLoaderPresence(0)
+      },
+    )
+  }
 
   function applyLucideIcon(target: IconPickTarget, iconName: string) {
     const nextFromIcon = target === "from" ? iconName : asset.fromIcon
@@ -818,13 +988,15 @@ export default function App() {
       toLabel,
       fromIcon: nextFromIcon,
       toIcon: nextToIcon,
+      strokeLocked: undefined,
+      loading: undefined,
     }
 
     setSelectedPreset("custom")
     setAsset(nextAsset)
+    resetAsyncPreview(0)
     setUploadedSvgs((current) => ({ ...current, [target]: undefined }))
     setPreviewMode("lucide")
-    setAgentState({ status: "idle" })
     setSettings((current) => ({
       ...current,
       componentName: componentNameForAsset(nextAsset),
@@ -855,99 +1027,25 @@ export default function App() {
         toLabel: target === "to" ? label : asset.toLabel,
         fromIcon: target === "from" ? undefined : asset.fromIcon,
         toIcon: target === "to" ? undefined : asset.toIcon,
+        strokeLocked: undefined,
+        loading: undefined,
       }
 
       setSelectedPreset("custom")
       setAsset(nextAsset)
+      resetAsyncPreview(0)
       setUploadedSvgs((current) => ({
         ...current,
         [target]: { name: label, markup },
       }))
       setPreviewMode("morph")
-      setAgentState({ status: "idle" })
       setSettings((current) => ({
         ...current,
         componentName: componentNameForAsset(nextAsset),
       }))
       setIconPickerTarget(null)
     } catch (error) {
-      setAgentState({
-        status: "error",
-        message: error instanceof Error ? error.message : "SVG upload failed.",
-      })
-    }
-  }
-
-  function readRenderedIconSvg(target: "from" | "to") {
-    const uploadedSvg = uploadedSvgs[target]?.markup
-    if (uploadedSvg) return uploadedSvg
-
-    const svg = lucideProbeRef.current?.querySelector<SVGSVGElement>(
-      `svg[data-agent-icon="${target}"]`,
-    )
-
-    return svg?.outerHTML ?? ""
-  }
-
-  async function generateAgentMorphLayers() {
-    if (!hasFromSource || !hasToSource) {
-      setAgentState({
-        status: "error",
-        message: "Select or upload both SVG sources first.",
-      })
-      return
-    }
-
-    setAgentState({
-      status: "running",
-      message: "Generating morph layers...",
-    })
-
-    try {
-      const data: AgentMorphResult = await generateMorphLayersWithAgent({
-        apiKey: openAIKey,
-        baseUrl: agentBaseUrl,
-        model: agentModel.trim() || "gpt-5.4",
-        stream: agentStream,
-        fromIcon: asset.fromIcon || uploadedSvgs.from?.name || asset.fromLabel,
-        toIcon: asset.toIcon || uploadedSvgs.to?.name || asset.toLabel,
-        fromLabel: asset.fromLabel,
-        toLabel: asset.toLabel,
-        fromSvg: readRenderedIconSvg("from"),
-        toSvg: readRenderedIconSvg("to"),
-      })
-
-      if (!Array.isArray(data.layers) || data.layers.length === 0) {
-        throw new Error("Agent response did not include morph layers.")
-      }
-
-      const nextAsset: MorphAsset = {
-        ...asset,
-        id: data.id || asset.id,
-        name: data.name || asset.name,
-        viewBox: data.viewBox || "0 0 24 24",
-        layers: data.layers,
-      }
-
-      setSelectedPreset("custom")
-      setAsset(nextAsset)
-      setPreviewMode("morph")
-      setProgress(0)
-      setLoop(false)
-      setAgentState({
-        status: "success",
-        message: `${data.layers.length} morph layers generated.`,
-        rationale: data.rationale,
-      })
-      setSettings((current) => ({
-        ...current,
-        componentName: componentNameForAsset(nextAsset),
-      }))
-    } catch (error) {
-      setAgentState({
-        status: "error",
-        message: error instanceof Error ? error.message : "Agent request failed.",
-      })
+      console.error(error)
     }
   }
 
@@ -956,310 +1054,424 @@ export default function App() {
     setSelectedPreset(id)
     setAsset(next)
     setUploadedSvgs({})
-    setProgress(0)
+    resetAsyncPreview(0)
     setLoop(false)
     setPreviewMode("morph")
-    setAgentState({ status: "idle" })
     setSettings((current) => ({
       ...current,
       componentName: componentNameForAsset(next),
     }))
   }
 
-  async function copyCode() {
-    await navigator.clipboard.writeText(exportCode)
-    setCopyState("copied")
-    window.setTimeout(() => setCopyState("idle"), 1200)
+  async function copyPresetCode(preset: MorphAsset) {
+    await writeClipboardText(
+      generateComponentCode(
+        preset,
+        {
+          ...settings,
+          componentName: componentNameForAsset(preset),
+        },
+        "react",
+      ),
+    )
+    setGalleryCopyId(preset.id)
+    window.setTimeout(() => {
+      setGalleryCopyId((current) => (current === preset.id ? null : current))
+    }, 1200)
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div
-        ref={lucideProbeRef}
-        aria-hidden="true"
-        className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0"
-      >
-        {AgentFromIcon && (
-          <AgentFromIcon
-            data-agent-icon="from"
-            size={24}
-            strokeWidth={settings.strokeWidth}
-          />
-        )}
-        {AgentToIcon && (
-          <AgentToIcon
-            data-agent-icon="to"
-            size={24}
-            strokeWidth={settings.strokeWidth}
-          />
-        )}
-      </div>
-      <header className="sticky top-0 z-30 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur">
-        <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 lg:px-5">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-emerald-700/70 bg-emerald-950 text-emerald-200">
-              <Layers3 className="h-5 w-5" />
+    <div className="min-h-screen bg-[#FFF7ED] text-zinc-950">
+      <input
+        ref={fromSvgInputRef}
+        type="file"
+        accept=".svg,image/svg+xml"
+        className="sr-only"
+        onChange={(event) => uploadSvgSource("from", event)}
+      />
+      <input
+        ref={toSvgInputRef}
+        type="file"
+        accept=".svg,image/svg+xml"
+        className="sr-only"
+        onChange={(event) => uploadSvgSource("to", event)}
+      />
+
+      <header className="sticky top-0 z-30 border-b border-orange-200/70 bg-[#FFF7ED]/88 backdrop-blur">
+        <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-gradient-to-br from-[#FF5B00] via-[#FF8A1F] to-[#7A2E00] text-white shadow-[0_10px_24px_rgba(255,91,0,0.26)]">
+              <Layers3 className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-base font-semibold text-zinc-50">
-                Morph Icon Studio
+              <h1 className="truncate text-base font-semibold text-zinc-950">
+                lucide-morph
               </h1>
               <p className="truncate text-xs text-zinc-500">
-                Pair-designed SVG path morph editor
+                animated SVG icon previews
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Tooltip content="Agent settings" align="end">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setSettingsOpen(true)}
-                aria-label="Agent settings"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </Tooltip>
-          </div>
         </div>
       </header>
 
-      <main className="grid min-h-[calc(100vh-65px)] grid-cols-1 lg:grid-cols-[320px_minmax(420px,1fr)_420px]">
-        <aside className="flex min-h-[560px] flex-col border-b border-zinc-800 bg-zinc-950 p-4 lg:h-[calc(100vh-65px)] lg:min-h-0 lg:border-b-0 lg:border-r lg:p-5">
-          <input
-            ref={fromSvgInputRef}
-            type="file"
-            accept=".svg,image/svg+xml"
-            className="sr-only"
-            onChange={(event) => uploadSvgSource("from", event)}
-          />
-          <input
-            ref={toSvgInputRef}
-            type="file"
-            accept=".svg,image/svg+xml"
-            className="sr-only"
-            onChange={(event) => uploadSvgSource("to", event)}
-          />
-          <div className="border-b border-zinc-800 pb-5">
-            <Field label="Preset">
-              <Select value={selectedPreset} onValueChange={loadPreset}>
-                <SelectTrigger aria-label="Preset">
-                  <SelectValue placeholder="Select preset" />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectedPreset === "custom" && (
-                    <SelectItem value="custom">Custom</SelectItem>
-                  )}
-                  {morphPresets.map((preset) => (
-                    <SelectItem key={preset.id} value={preset.id}>
-                      {preset.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
-          <div className="mt-5 flex min-h-0 flex-1 flex-col gap-3">
-            <div>
-              <div className="grid gap-2">
-                <IconReferenceCard
-                  target="from"
-                  active={iconPickerTarget === "from"}
-                  name={asset.fromIcon}
-                  svgMarkup={uploadedSvgs.from?.markup}
-                  label={asset.fromLabel}
-                  color={settings.color}
-                  onClick={() =>
-                    setIconPickerTarget((current) =>
-                      current === "from" ? null : "from",
-                    )
-                  }
-                />
-                <IconReferenceCard
-                  target="to"
-                  active={iconPickerTarget === "to"}
-                  name={asset.toIcon}
-                  svgMarkup={uploadedSvgs.to?.markup}
-                  label={asset.toLabel}
-                  color={settings.color}
-                  onClick={() =>
-                    setIconPickerTarget((current) =>
-                      current === "to" ? null : "to",
-                    )
-                  }
-                />
-              </div>
-            </div>
+      <main>
+        <section className="relative isolate overflow-hidden border-b border-slate-200/70">
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_16%_18%,rgba(255,91,0,0.16),transparent_32%),radial-gradient(circle_at_82%_12%,rgba(255,184,77,0.18),transparent_30%),linear-gradient(180deg,#ffffff_0%,#FFF7ED_78%)]" />
+          <div className="absolute left-[8%] top-24 -z-10 h-40 w-40 rounded-full bg-[#FF5B00]/10 blur-3xl" />
+          <div className="absolute right-[14%] top-16 -z-10 h-48 w-48 rounded-full bg-[#FFB84D]/22 blur-3xl" />
 
-            <div className="space-y-2">
-              <Button
-                type="button"
-                variant="default"
-                onClick={generateAgentMorphLayers}
-                disabled={
-                  agentState.status === "running" ||
-                  !hasFromSource ||
-                  !hasToSource
-                }
-                className="w-full"
+          <div className="mx-auto max-w-6xl px-4 py-14 sm:py-18">
+            <div className="max-w-3xl text-left">
+              <h2
+                aria-label="Shape motion. Ship icons."
+                className="text-[clamp(3rem,8vw,6.8rem)] font-semibold leading-[0.9] tracking-[-0.045em] text-slate-950"
               >
-                <Sparkles className="h-4 w-4" />
-                {agentState.status === "running" ? "Generating" : "Generate Morph"}
-              </Button>
-              {agentState.status !== "idle" && (
-                <div
-                  aria-live="polite"
-                  className={cn(
-                    "rounded-md border px-3 py-2 text-xs leading-5",
-                    agentState.status === "error"
-                      ? "border-rose-900/80 bg-rose-950/40 text-rose-100"
-                      : "border-zinc-800 bg-zinc-900/70 text-zinc-300",
-                  )}
-                >
-                  <div>{agentState.message}</div>
-                  {agentState.status === "success" && agentState.rationale && (
-                    <div className="mt-1 text-zinc-500">
-                      {agentState.rationale}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </aside>
+                <span className="block">Shape motion.</span>
+                <span className="block bg-gradient-to-r from-[#FF5B00] via-[#FF8A1F] to-[#7A2E00] bg-clip-text text-transparent">
+                  Ship icons.
+                </span>
+              </h2>
 
-        <section className="min-w-0 bg-zinc-950">
-          <div className="flex min-h-[420px] flex-col border-b border-zinc-800">
-            <div className="stage-grid relative grid flex-1 place-items-center overflow-hidden p-8">
-              <div className="absolute right-4 top-4 z-10">
-                <Tooltip content={loop ? "Pause loop" : "Loop preview"}>
-                  <Button
-                    variant={loop ? "default" : "secondary"}
-                    size="icon"
-                    onClick={() => setLoop((value) => !value)}
-                    aria-label={loop ? "Pause loop" : "Loop preview"}
-                  >
-                    {loop ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                  </Button>
-                </Tooltip>
-              </div>
-              <StageReferenceStrip
-                asset={asset}
-                fromSvgMarkup={uploadedSvgs.from?.markup}
-                toSvgMarkup={uploadedSvgs.to?.markup}
-                color={settings.color}
-                strokeWidth={settings.strokeWidth}
-              />
-              {previewMode === "morph" ? (
-                <MorphSvg
-                  asset={asset}
-                  progress={progress}
-                  size={settings.size}
-                  color={settings.color}
-                  strokeWidth={settings.strokeWidth}
-                  showOnion={settings.showOnion}
-                />
-              ) : (
-                <LucideTransitionPreview
-                  fromIcon={asset.fromIcon}
-                  toIcon={asset.toIcon}
-                  progress={progress}
-                  size={settings.size}
-                  color={settings.color}
-                  strokeWidth={settings.strokeWidth}
-                />
-              )}
-            </div>
+              <p className="mt-7 max-w-2xl text-balance text-base leading-7 text-slate-600 sm:text-lg">
+                Build, inspect, and export SVG path transitions from one compact
+                workspace—complete with timing controls, loading states, and
+                reusable component output.
+              </p>
 
-            <div className="grid gap-4 border-t border-zinc-800 bg-zinc-950 p-4 md:grid-cols-[minmax(180px,1fr)_minmax(180px,260px)] md:items-start">
-              <div className="space-y-1">
-                <div className="flex h-7 items-center justify-between text-xs text-zinc-500">
-                  <span>{asset.fromLabel}</span>
-                  <span>{asset.toLabel}</span>
-                </div>
-                <Slider
-                  value={progress}
-                  onValueChange={(value) => {
-                    setLoop(false)
-                    setProgress(value)
-                  }}
-                />
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center justify-between gap-3">
-                  <Label htmlFor="animation-duration" className="shrink-0">
-                    Duration
-                  </Label>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <Input
-                      id="animation-duration"
-                      type="number"
-                      min={animationDurationMin}
-                      max={animationDurationMax}
-                      step={animationDurationStep}
-                      value={durationInput}
-                      onChange={(event) => setDurationInput(event.currentTarget.value)}
-                      onBlur={commitDurationInput}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.currentTarget.blur()
-                        }
-                      }}
-                      className="h-7 w-20 px-2 text-right text-xs"
-                      aria-label="Animation duration in milliseconds"
-                    />
-                    <span className="text-xs text-zinc-500">ms</span>
-                  </div>
-                </div>
-                <Slider
-                  min={animationDurationMin}
-                  max={animationDurationMax}
-                  step={animationDurationStep}
-                  value={settings.duration}
-                  onValueChange={updateDuration}
-                  aria-label="Animation duration"
-                />
+              <div className="mt-7 flex flex-wrap gap-2">
+                <Badge tone="accent">Path timeline</Badge>
+                <Badge tone="neutral">{morphPresets.length} presets</Badge>
+                <Badge tone="neutral">React · Vue · Web Component</Badge>
               </div>
             </div>
           </div>
         </section>
 
-        <aside className="border-t border-zinc-800 bg-zinc-950 p-4 lg:border-l lg:border-t-0 lg:p-5">
-          <SectionTitle
-            icon={Code2}
-            title="Export"
-          />
+        <section className="mx-auto max-w-6xl px-4 pb-12">
+          <div className="overflow-hidden rounded-lg border border-zinc-100 bg-white shadow-[0_18px_45px_rgba(24,24,27,0.08)]">
+            <div className="stage-grid relative grid min-h-[360px] place-items-center overflow-hidden p-8 sm:min-h-[430px]">
+              <div className="absolute left-4 top-4 z-10 w-64 max-w-[calc(100%-2rem)]">
+                <Select value={selectedPreset} onValueChange={loadPreset}>
+                  <SelectTrigger aria-label="Preset">
+                    <SelectValue placeholder="Select preset" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedPreset === "custom" && (
+                      <SelectItem value="custom">Custom</SelectItem>
+                    )}
+                    {morphPresets.map((preset) => (
+                      <SelectItem key={preset.id} value={preset.id}>
+                        {preset.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="absolute right-4 top-4 z-10">
+                {settings.loadingEnabled ? (
+                  <Button
+                    variant={asyncPreviewRunning ? "default" : "secondary"}
+                    disabled={!hasLoadingDesign}
+                    onClick={
+                      asyncPreviewRunning ? cancelAsyncPreview : startAsyncPreview
+                    }
+                    aria-label={
+                      !hasLoadingDesign
+                        ? "Loading middle state unavailable"
+                        : asyncPreviewRunning
+                          ? "Cancel loading flow"
+                          : "Run loading flow"
+                    }
+                  >
+                    {asyncPreviewRunning ? (
+                      <X className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
+                    <span className="hidden sm:inline">
+                      {asyncPreviewRunning ? "Cancel" : "Run preview"}
+                    </span>
+                  </Button>
+                ) : (
+                  <Button
+                    variant={loop ? "default" : "secondary"}
+                    onClick={() => setLoop((value) => !value)}
+                    aria-label={loop ? "Pause loop" : "Loop preview"}
+                  >
+                    {loop ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
+                    <span className="hidden sm:inline">
+                      {loop ? "Pause" : "Loop preview"}
+                    </span>
+                  </Button>
+                )}
+              </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Badge tone="neutral">{asset.layers.length} layers</Badge>
-            <Badge tone="warning">{settings.duration}ms</Badge>
+              {settings.loadingEnabled && hasLoadingDesign ? (
+                <MorphSvg
+                  asset={asset}
+                  progress={loadingProgress}
+                  size={settings.size}
+                  color={settings.color}
+                  strokeWidth={settings.strokeWidth}
+                  showOnion={settings.showOnion && !asyncPreviewRunning}
+                  segment={loadingSegment}
+                  loadingActive={asyncPhase === "loading"}
+                />
+              ) : (
+                previewMode === "morph" ? (
+                  <MorphSvg
+                    asset={asset}
+                    progress={progress}
+                    size={settings.size}
+                    color={settings.color}
+                    strokeWidth={settings.strokeWidth}
+                    showOnion={settings.showOnion}
+                  />
+                ) : (
+                  <LucideTransitionPreview
+                    fromIcon={asset.fromIcon}
+                    toIcon={asset.toIcon}
+                    progress={progress}
+                    size={settings.size}
+                    color={settings.color}
+                    strokeWidth={settings.strokeWidth}
+                  />
+                )
+              )}
+            </div>
+
+            <div className="grid gap-4 border-t border-zinc-100 bg-white p-4">
+              <div className="grid gap-4 rounded-md border border-zinc-100 bg-zinc-50 px-3 py-3 md:grid-cols-2 lg:grid-cols-4">
+                <div className="space-y-1">
+                  <div className="flex h-7 items-center justify-between gap-3">
+                    <Label>Progress</Label>
+                    <span className="font-mono text-xs text-zinc-400">
+                      {Math.round(progress * 100)}%
+                    </span>
+                  </div>
+                  <Slider
+                    value={progress}
+                    onValueChange={(value) => {
+                      setLoop(false)
+                      resetAsyncPreview(value)
+                    }}
+                    aria-label="Preview progress"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex h-7 items-center justify-between gap-3">
+                    <Label htmlFor="animation-duration" className="shrink-0">
+                      Duration
+                    </Label>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Input
+                        id="animation-duration"
+                        type="number"
+                        min={animationDurationMin}
+                        max={animationDurationMax}
+                        step={animationDurationStep}
+                        value={durationInput}
+                        onChange={(event) =>
+                          setDurationInput(event.currentTarget.value)
+                        }
+                        onBlur={commitDurationInput}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.currentTarget.blur()
+                          }
+                        }}
+                        className="h-7 w-20 px-2 text-right text-xs"
+                        aria-label="Animation duration in milliseconds"
+                      />
+                      <span className="text-xs text-zinc-500">ms</span>
+                    </div>
+                  </div>
+                  <Slider
+                    min={animationDurationMin}
+                    max={animationDurationMax}
+                    step={animationDurationStep}
+                    value={settings.duration}
+                    onValueChange={updateDuration}
+                    aria-label="Animation duration"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex h-7 items-center justify-between gap-3">
+                    <Label>Size</Label>
+                    <span className="font-mono text-xs text-zinc-400">
+                      {settings.size}px
+                    </span>
+                  </div>
+                  <Slider
+                    min={96}
+                    max={240}
+                    step={4}
+                    value={settings.size}
+                    onValueChange={(size) =>
+                      setSettings((current) => ({ ...current, size }))
+                    }
+                    aria-label="Icon size"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex h-7 items-center justify-between gap-3">
+                    <Label>Stroke</Label>
+                    <span className="font-mono text-xs text-zinc-400">
+                      {settings.strokeWidth}px
+                    </span>
+                  </div>
+                  <Slider
+                    min={1}
+                    max={4}
+                    step={0.25}
+                    value={settings.strokeWidth}
+                    onValueChange={(strokeWidth) =>
+                      setSettings((current) => ({ ...current, strokeWidth }))
+                    }
+                    aria-label="Stroke width"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 rounded-md border border-zinc-100 bg-zinc-50 px-3 py-3 sm:grid-cols-2 lg:grid-cols-[minmax(260px,1fr)_180px_132px_180px]">
+                <div className="flex min-h-16 items-center justify-between gap-3 rounded-md border border-zinc-100 bg-white px-3 py-2">
+                  <div className="min-w-0">
+                    <Label>Loading middle state</Label>
+                    <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                      {hasLoadingDesign
+                        ? asyncPhaseLabel(asyncPhase)
+                        : "Loading paths required"}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={settings.loadingEnabled}
+                    onCheckedChange={(checked) => {
+                      resetAsyncPreview(0)
+                      setLoop(false)
+                      setSettings((current) => ({
+                        ...current,
+                        loadingEnabled: checked,
+                      }))
+                    }}
+                    aria-label="Use intermediate loading state"
+                    className="shrink-0"
+                  />
+                </div>
+
+                <div className="flex min-h-16 items-center justify-between gap-3 rounded-md border border-zinc-100 bg-white px-3 py-2">
+                  <Label htmlFor="loading-duration">Hold</Label>
+                  <div className="flex items-center gap-1.5">
+                    <Input
+                      id="loading-duration"
+                      type="number"
+                      min={loadingDurationMin}
+                      max={loadingDurationMax}
+                      step={loadingDurationStep}
+                      value={loadingDurationInput}
+                      disabled={!settings.loadingEnabled}
+                      onChange={(event) =>
+                        setLoadingDurationInput(event.currentTarget.value)
+                      }
+                      onBlur={commitLoadingDurationInput}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") event.currentTarget.blur()
+                      }}
+                      className="h-8 w-20 px-2 text-right text-xs"
+                      aria-label="Loading hold duration in milliseconds"
+                    />
+                    <span className="text-xs text-zinc-500">ms</span>
+                  </div>
+                </div>
+
+                <div className="flex min-h-16 items-center justify-between gap-3 rounded-md border border-zinc-100 bg-white px-3 py-2">
+                  <Label>Color</Label>
+                  <input
+                    type="color"
+                    value={settings.color}
+                    onChange={(event) =>
+                      setSettings((current) => ({
+                        ...current,
+                        color: event.currentTarget.value,
+                      }))
+                    }
+                    className="h-9 w-14 cursor-pointer rounded-md border border-zinc-200 bg-white p-1"
+                    aria-label="Icon color"
+                  />
+                </div>
+
+                <div className="flex min-h-16 items-center justify-between gap-3 rounded-md border border-zinc-100 bg-white px-3 py-2">
+                  <Label>Onion paths</Label>
+                  <Switch
+                    checked={settings.showOnion}
+                    onCheckedChange={(showOnion) =>
+                      setSettings((current) => ({ ...current, showOnion }))
+                    }
+                    aria-label="Show onion paths"
+                    className="shrink-0"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 pb-12">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-2xl font-normal tracking-normal text-zinc-950">
+                animated preset gallery
+              </h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                {filteredPresets.length} visible morphs
+              </p>
+            </div>
+            <div className="relative w-full sm:w-72">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+              <Input
+                aria-label="Search preset gallery"
+                value={presetSearch}
+                onChange={(event) => setPresetSearch(event.currentTarget.value)}
+                placeholder="search presets..."
+                className="pl-9"
+              />
+            </div>
           </div>
 
-          <Field label="Target" className="mt-4">
-            <Select
-              value={exportTarget}
-              onValueChange={(value) => setExportTarget(value as ExportTarget)}
-            >
-              <SelectTrigger aria-label="Export target">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {exportTargets.map((target) => (
-                  <SelectItem key={target.value} value={target.value}>
-                    {target.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
+          {filteredPresets.length > 0 ? (
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
+              {filteredPresets.map((preset) => (
+                <MorphPresetCard
+                  key={preset.id}
+                  active={selectedPreset === preset.id}
+                  asset={preset}
+                  color={settings.color}
+                  copied={galleryCopyId === preset.id}
+                  strokeWidth={settings.strokeWidth}
+                  onCopyCode={() => copyPresetCode(preset)}
+                  onClick={() => loadPreset(preset.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid min-h-44 place-items-center rounded-lg border border-zinc-100 bg-white text-sm text-zinc-500">
+              No matching presets
+            </div>
+          )}
+        </section>
 
-          <CodePreview code={exportCode} copyState={copyState} onCopy={copyCode} />
-        </aside>
       </main>
       {iconPickerTarget && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+          className="fixed inset-0 z-50 grid place-items-center bg-zinc-950/45 p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="icon-picker-title"
@@ -1267,12 +1479,12 @@ export default function App() {
             if (event.target === event.currentTarget) setIconPickerTarget(null)
           }}
         >
-          <div className="flex max-h-[min(760px,calc(100vh-32px))] w-full max-w-3xl flex-col overflow-hidden rounded-md border border-zinc-800 bg-zinc-950 p-4 shadow-panel">
+          <div className="flex max-h-[min(760px,calc(100vh-32px))] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white p-4 shadow-panel">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <h2
                   id="icon-picker-title"
-                  className="truncate text-sm font-semibold text-zinc-100"
+                  className="truncate text-sm font-semibold text-zinc-950"
                 >
                   {iconPickerTarget === "from" ? "From source" : "To source"}
                 </h2>
@@ -1330,84 +1542,6 @@ export default function App() {
                 color={settings.color}
                 onPick={(name) => applyLucideIcon(iconPickerTarget, name)}
               />
-            </div>
-          </div>
-        </div>
-      )}
-      {settingsOpen && (
-        <div
-          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="agent-settings-title"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setSettingsOpen(false)
-          }}
-        >
-          <div className="w-full max-w-lg rounded-md border border-zinc-800 bg-zinc-950 p-4 shadow-panel">
-            <div className="flex items-center justify-between gap-3">
-              <h2
-                id="agent-settings-title"
-                className="truncate text-sm font-semibold text-zinc-100"
-              >
-                Agent settings
-              </h2>
-              <Button
-                variant="ghost"
-                size="iconSm"
-                onClick={() => setSettingsOpen(false)}
-                aria-label="Close settings"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="mt-4 space-y-4">
-              <Field label="Base URL">
-                <Input
-                  value={agentBaseUrl}
-                  onChange={(event) => setAgentBaseUrl(event.currentTarget.value)}
-                  placeholder={defaultOpenAIBaseUrl}
-                />
-              </Field>
-              <Field label="Model">
-                <Input
-                  value={agentModel}
-                  onChange={(event) => setAgentModel(event.currentTarget.value)}
-                  placeholder={defaultOpenAIModel}
-                />
-              </Field>
-              <Field label="API key">
-                <Input
-                  type="password"
-                  autoComplete="off"
-                  value={openAIKey}
-                  onChange={(event) => setOpenAIKey(event.currentTarget.value)}
-                  placeholder="sk-..."
-                />
-              </Field>
-              <div className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900/70 px-3 py-2">
-                <Label>Streaming</Label>
-                <Switch
-                  checked={agentStream}
-                  onCheckedChange={setAgentStream}
-                  aria-label="Use streaming requests"
-                />
-              </div>
-            </div>
-
-            <div className="mt-5 flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setAgentBaseUrl(defaultOpenAIBaseUrl)
-                  setAgentModel(defaultOpenAIModel)
-                  setAgentStream(true)
-                }}
-              >
-                Reset
-              </Button>
-              <Button onClick={() => setSettingsOpen(false)}>Done</Button>
             </div>
           </div>
         </div>

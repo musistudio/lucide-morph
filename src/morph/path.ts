@@ -18,7 +18,10 @@ export type PathValidation =
     }
 
 function normalizeTemplate(template: string) {
-  return template.replace(/\s+/g, " ").trim()
+  // SVG allows commas and arbitrary whitespace between numeric values. Those
+  // separators do not affect the command structure and the interpolator uses
+  // the formatting from the first path, so ignore them when comparing paths.
+  return template.replace(/[\s,]+/g, "").trim()
 }
 
 export function getPathTemplate(path: string) {
@@ -30,6 +33,10 @@ export function extractPathNumbers(path: string) {
 }
 
 export function validatePathPair(from: string, to: string): PathValidation {
+  if (typeof from !== "string" || typeof to !== "string") {
+    return { ok: false, reason: "Both path fields must be strings." }
+  }
+
   if (!from.trim() || !to.trim()) {
     return { ok: false, reason: "Both path fields are required." }
   }
@@ -116,9 +123,22 @@ export function clamp(value: number, min = 0, max = 1) {
 export function getAssetDiagnostics(asset: MorphAsset) {
   const layers = asset.layers.map((layer) => ({
     id: layer.id,
-    result: validatePathPair(layer.from, layer.to),
+    direct: validatePathPair(layer.from, layer.to),
+    fromLoading:
+      layer.loading && layer.loadingOpacity !== undefined
+        ? validatePathPair(layer.from, layer.loading)
+        : undefined,
+    loadingTo:
+      layer.loading && layer.loadingOpacity !== undefined
+        ? validatePathPair(layer.loading, layer.to)
+        : undefined,
   }))
-  const errors = layers.filter((layer) => !layer.result.ok).length
+  const errors = layers.filter(
+    (layer) =>
+      !layer.direct.ok ||
+      (layer.fromLoading !== undefined && !layer.fromLoading.ok) ||
+      (layer.loadingTo !== undefined && !layer.loadingTo.ok),
+  ).length
 
   return {
     layers,
