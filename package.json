@@ -1,67 +1,19 @@
 {
-  "name": "@musistudio/lucide-morph",
+  "name": "@musistudio/lucide-morph-workspace",
   "version": "1.0.0",
+  "private": true,
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
-  "files": [
-    "dist-package",
-    "README.md",
-    "LICENSE"
+  "workspaces": [
+    "packages/*"
   ],
-  "main": "./dist-package/index.js",
-  "module": "./dist-package/index.js",
-  "types": "./dist-package/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist-package/index.d.ts",
-      "import": "./dist-package/index.js"
-    },
-    "./react": {
-      "types": "./dist-package/react.d.ts",
-      "import": "./dist-package/react.js"
-    },
-    "./vue": {
-      "types": "./dist-package/vue.d.ts",
-      "import": "./dist-package/vue.js"
-    },
-    "./webcomponent": {
-      "types": "./dist-package/webcomponent.d.ts",
-      "import": "./dist-package/webcomponent.js"
-    },
-    "./package.json": "./package.json"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
-    "build:package": "vite build --config vite.package.config.ts && tsc -p tsconfig.package.json",
-    "prepublishOnly": "npm run build:package",
+    "build:package": "node scripts/build-packages.mjs && tsc -p tsconfig.package.json && node scripts/sync-package-types.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "test": "npm run test:package",
     "test:package": "npm run build:package && playwright test"
-  },
-  "dependencies": {
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "lucide-react": "^0.468.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.6.0"
-  },
-  "peerDependencies": {
-    "react": ">=18",
-    "vue": ">=3.3"
-  },
-  "peerDependenciesMeta": {
-    "react": {
-      "optional": true
-    },
-    "vue": {
-      "optional": true
-    }
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
@@ -70,6 +22,12 @@
     "@types/react": "^18.3.17",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^6.0.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.6.0",
     "tailwindcss": "^4.3.1",
     "typescript": "^5.7.2",
     "vite": "^8.0.16",

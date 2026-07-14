@@ -10,31 +10,34 @@ and framework-ready runtime packages for React, Vue, and Web Components.
 - Preview async `from → loading → to` flows with a configurable loading hold.
 - Start from 78 built-in Lucide-only presets with From → Loading → To transitions.
 - Pair Lucide icons or upload custom SVGs.
-- Install one npm package and use the same presets from React, Vue, or Web
-  Components.
+- Install the runtime package that matches React, Vue, or Web Components while
+  sharing the same preset core.
 
 ## npm package
 
-Install the package together with the framework integration you use:
+Install the package for the framework integration you use:
 
 ```sh
-npm install @musistudio/lucide-morph
+npm install @musistudio/lucide-morph-react
+# or
+npm install @musistudio/lucide-morph-vue
+# or
+npm install @musistudio/lucide-morph-webcomponent
 ```
 
-Use React 18 or newer for the React entry, or install Vue 3.3 or newer for the
-Vue entry.
+The React package has a React 18+ peer dependency, the Vue package has a Vue
+3.3+ peer dependency, and the Web Component package has no framework peer.
 
-The published package exposes one root preset entry and three framework-specific
-subpath packages:
+The published packages are split by dependency surface:
 
 ```txt
 @musistudio/lucide-morph
-@musistudio/lucide-morph/react
-@musistudio/lucide-morph/vue
-@musistudio/lucide-morph/webcomponent
+@musistudio/lucide-morph-react
+@musistudio/lucide-morph-vue
+@musistudio/lucide-morph-webcomponent
 ```
 
-The root entry contains all preset data and pure helpers:
+The core package contains preset data and pure helpers:
 
 ```ts
 import {
@@ -52,7 +55,7 @@ console.log(getPresetById("collapse-sidebar-to-expand-inspector"))
 
 ```tsx
 import { useState } from "react"
-import { MorphIcon } from "@musistudio/lucide-morph/react"
+import { MorphIcon } from "@musistudio/lucide-morph-react"
 
 export function Example() {
   const [active, setActive] = useState(false)
@@ -77,7 +80,7 @@ using this package entry. The copied component keeps the editor's current
 prop so the application controls the transition:
 
 ```tsx
-import { MorphIcon } from "@musistudio/lucide-morph/react"
+import { MorphIcon } from "@musistudio/lucide-morph-react"
 
 export function MenuToXIcon({ active = false }: { active?: boolean }) {
   return <MorphIcon preset="menu-x" active={active} />
@@ -94,7 +97,7 @@ the current preset and editor settings.
 ```vue
 <script setup lang="ts">
 import { ref } from "vue"
-import { MorphIcon } from "@musistudio/lucide-morph/vue"
+import { MorphIcon } from "@musistudio/lucide-morph-vue"
 
 const active = ref(false)
 </script>
@@ -115,7 +118,7 @@ const active = ref(false)
 ### Web Component
 
 ```ts
-import { defineMorphIconElement } from "@musistudio/lucide-morph/webcomponent"
+import { defineMorphIconElement } from "@musistudio/lucide-morph-webcomponent"
 
 defineMorphIconElement()
 ```
@@ -124,8 +127,12 @@ defineMorphIconElement()
 <lucide-morph preset="plus-check" active size="32" color="#FF5B00"></lucide-morph>
 ```
 
-Every entry also exports `morphPresets`, `getPresetById`, `cloneAsset`, and the
-shared `MorphAsset` types.
+Every framework package also exports `morphPresets`, `getPresetById`,
+`cloneAsset`, and the shared `MorphAsset` types from the core package.
+
+All packages publish ESM with `sideEffects: false`. The core package preserves
+the `morph/*` and `runtime/*` module structure so bundlers can tree-shake unused
+exports and deep imports.
 
 All three components accept the same runtime controls:
 
@@ -141,7 +148,10 @@ To build a release locally and inspect the files that will be published:
 
 ```sh
 npm run build:package
-npm pack --dry-run
+npm pack --dry-run --workspace @musistudio/lucide-morph
+npm pack --dry-run --workspace @musistudio/lucide-morph-react
+npm pack --dry-run --workspace @musistudio/lucide-morph-vue
+npm pack --dry-run --workspace @musistudio/lucide-morph-webcomponent
 ```
 
 ## Async loading states
@@ -166,7 +176,7 @@ fails. The editor's loading duration only simulates that wait during preview.
 
 ```tsx
 import { useState } from "react"
-import { MorphIcon } from "@musistudio/lucide-morph/react"
+import { MorphIcon } from "@musistudio/lucide-morph-react"
 
 const [iconState, setIconState] = useState<"from" | "loading" | "to">("from")
 
@@ -221,9 +231,9 @@ npx playwright install chromium
 npm test
 ```
 
-The test command builds `dist-package` first, then loads the root, React, Vue,
-and Web Component package exports in a real browser. It also verifies that the
-preset gallery copies npm-package usage code.
+The test command builds all workspace packages first, then loads the core,
+React, Vue, and Web Component package exports in a real browser. It also
+verifies that the preset gallery copies npm-package usage code.
 
 ## License
 

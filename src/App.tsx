@@ -37,6 +37,7 @@ import {
   exportTargets,
   generateNpmReactUsageCode,
   generateNpmUsageCode,
+  npmPackageNames,
   type ExportTarget,
 } from "@/morph/exportCode"
 import { MorphSvg } from "@/morph/MorphSvg"
@@ -54,9 +55,9 @@ const loadingDurationMax = 10000
 const loadingDurationStep = 100
 
 const npmInstallCommands: Record<ExportTarget, string> = {
-  react: "npm install @musistudio/lucide-morph",
-  vue: "npm install @musistudio/lucide-morph",
-  "web-component": "npm install @musistudio/lucide-morph",
+  react: `npm install ${npmPackageNames.react}`,
+  vue: `npm install ${npmPackageNames.vue}`,
+  "web-component": `npm install ${npmPackageNames["web-component"]}`,
 }
 
 const defaultSettings: EditorSettings = {

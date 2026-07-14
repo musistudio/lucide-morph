@@ -1,4 +1,88 @@
+import { readFile } from "node:fs/promises"
+import path from "node:path"
 import { expect, test } from "@playwright/test"
+
+const workspaceRoot = process.cwd()
+
+async function readWorkspaceJson<T>(filePath: string) {
+  return JSON.parse(
+    await readFile(path.join(workspaceRoot, filePath), "utf8"),
+  ) as T
+}
+
+async function readWorkspaceFile(filePath: string) {
+  return readFile(path.join(workspaceRoot, filePath), "utf8")
+}
+
+test("publishes separated package dependency metadata", async () => {
+  type PackageJson = {
+    dependencies?: Record<string, string>
+    peerDependencies?: Record<string, string>
+    sideEffects?: boolean
+  }
+
+  const core = await readWorkspaceJson<PackageJson>("packages/core/package.json")
+  const react = await readWorkspaceJson<PackageJson>(
+    "packages/react/package.json",
+  )
+  const vue = await readWorkspaceJson<PackageJson>("packages/vue/package.json")
+  const webComponent = await readWorkspaceJson<PackageJson>(
+    "packages/webcomponent/package.json",
+  )
+
+  expect(core.sideEffects).toBe(false)
+  expect(core.dependencies).toBeUndefined()
+  expect(core.peerDependencies).toBeUndefined()
+
+  expect(react.dependencies).toEqual({
+    "@musistudio/lucide-morph": "1.0.0",
+  })
+  expect(react.peerDependencies).toEqual({ react: ">=18" })
+
+  expect(vue.dependencies).toEqual({
+    "@musistudio/lucide-morph": "1.0.0",
+  })
+  expect(vue.peerDependencies).toEqual({ vue: ">=3.3" })
+
+  expect(webComponent.dependencies).toEqual({
+    "@musistudio/lucide-morph": "1.0.0",
+  })
+  expect(webComponent.peerDependencies).toBeUndefined()
+})
+
+test("builds tree-shakeable framework package outputs", async () => {
+  const coreIndex = await readWorkspaceFile("packages/core/dist/index.js")
+  const reactEntry = await readWorkspaceFile("packages/react/dist/index.js")
+  const vueEntry = await readWorkspaceFile("packages/vue/dist/index.js")
+  const webComponentEntry = await readWorkspaceFile(
+    "packages/webcomponent/dist/index.js",
+  )
+
+  await expect(
+    readWorkspaceFile("packages/core/dist/morph/presets.js"),
+  ).resolves.toContain("morphPresets")
+  await expect(
+    readWorkspaceFile("packages/core/dist/runtime/morph.js"),
+  ).resolves.toContain("getMorphIconFrames")
+
+  expect(coreIndex).toContain("./morph/presets.js")
+  expect(coreIndex).toContain("./runtime/morph.js")
+
+  expect(reactEntry).toContain('from "react"')
+  expect(reactEntry).toContain('from "react/jsx-runtime"')
+  expect(reactEntry).toContain("@musistudio/lucide-morph/runtime/morph")
+  expect(reactEntry).not.toContain('from "vue"')
+
+  expect(vueEntry).toContain('from "vue"')
+  expect(vueEntry).toContain("@musistudio/lucide-morph/runtime/morph")
+  expect(vueEntry).not.toContain('from "react"')
+
+  expect(webComponentEntry).toContain(
+    "@musistudio/lucide-morph/runtime/morph",
+  )
+  expect(webComponentEntry).not.toContain('from "react"')
+  expect(webComponentEntry).not.toContain('from "vue"')
+})
 
 test.describe("published npm package entries", () => {
   test.beforeEach(async ({ page }) => {
@@ -74,7 +158,7 @@ test("gallery copy button copies npm package usage", async ({ context, page }) =
     .dispatchEvent("click")
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
-    .toContain('import { MorphIcon } from "@musistudio/lucide-morph/react"')
+    .toContain('import { MorphIcon } from "@musistudio/lucide-morph-react"')
   const clipboard = await page.evaluate(() => navigator.clipboard.readText())
 
   expect(clipboard).toContain('preset="menu-x"')
@@ -106,26 +190,28 @@ test("hero switches and copies the selected framework usage", async ({
   await vue.click()
   await expect(vue).toHaveAttribute("aria-pressed", "true")
   await expect(codeCard).toContainText(
-    "npm install @musistudio/lucide-morph",
+    "npm install @musistudio/lucide-morph-vue",
   )
   await expect(codeCard).not.toContainText("Component entry")
   await page.getByRole("button", { name: "Copy Vue npm usage" }).click()
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
-    .toContain('from "@musistudio/lucide-morph/vue"')
+    .toContain('from "@musistudio/lucide-morph-vue"')
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(
     '<script setup lang="ts">',
   )
 
   await webComponent.click()
   await expect(webComponent).toHaveAttribute("aria-pressed", "true")
-  await expect(codeCard).toContainText("npm install @musistudio/lucide-morph")
+  await expect(codeCard).toContainText(
+    "npm install @musistudio/lucide-morph-webcomponent",
+  )
   await page
     .getByRole("button", { name: "Copy Web Component npm usage" })
     .click()
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
-    .toContain('from "@musistudio/lucide-morph/webcomponent"')
+    .toContain('from "@musistudio/lucide-morph-webcomponent"')
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(
     'document.createElement("lucide-morph")',
   )

@@ -1,4 +1,7 @@
-import { getPresetById, morphPresets } from "./morph/presets"
+import {
+  getPresetById,
+  morphPresets,
+} from "@musistudio/lucide-morph/morph/presets"
 import {
   hasLoadingMorph,
   progressToPosition,
@@ -8,17 +11,24 @@ import {
   targetPositionForState,
   type MorphIconPreset,
   type MorphIconState,
-} from "./runtime/morph"
-import type { MorphAsset } from "./morph/types"
+} from "@musistudio/lucide-morph/runtime/morph"
+import type { MorphAsset } from "@musistudio/lucide-morph/morph/types"
 
-export { cloneAsset, getPresetById, morphPresets } from "./morph/presets"
+export {
+  cloneAsset,
+  getPresetById,
+  morphPresets,
+} from "@musistudio/lucide-morph/morph/presets"
 export type {
   MorphAsset,
   MorphLayer,
   MorphLayerMode,
   MorphLoadingDesign,
-} from "./morph/types"
-export type { MorphIconPreset, MorphIconState } from "./runtime/morph"
+} from "@musistudio/lucide-morph/morph/types"
+export type {
+  MorphIconPreset,
+  MorphIconState,
+} from "@musistudio/lucide-morph/runtime/morph"
 
 function easeOutCubic(value: number) {
   return 1 - Math.pow(1 - value, 3)

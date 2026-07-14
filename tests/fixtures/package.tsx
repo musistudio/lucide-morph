@@ -8,9 +8,9 @@ import {
 import {
   MorphIcon as ReactMorphIcon,
   type MorphIconState,
-} from "@musistudio/lucide-morph/react"
-import { MorphIcon as VueMorphIcon } from "@musistudio/lucide-morph/vue"
-import { defineMorphIconElement } from "@musistudio/lucide-morph/webcomponent"
+} from "@musistudio/lucide-morph-react"
+import { MorphIcon as VueMorphIcon } from "@musistudio/lucide-morph-vue"
+import { defineMorphIconElement } from "@musistudio/lucide-morph-webcomponent"
 
 const metadata = document.querySelector<HTMLOutputElement>("#package-metadata")
 

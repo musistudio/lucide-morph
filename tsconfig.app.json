@@ -18,7 +18,13 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@musistudio/lucide-morph": ["./src/index.ts"],
+      "@musistudio/lucide-morph/morph/*": ["./src/morph/*"],
+      "@musistudio/lucide-morph/runtime/*": ["./src/runtime/*"],
+      "@musistudio/lucide-morph-react": ["./src/react.tsx"],
+      "@musistudio/lucide-morph-vue": ["./src/vue.ts"],
+      "@musistudio/lucide-morph-webcomponent": ["./src/webcomponent.ts"]
     }
   },
   "include": ["src"]

@@ -7,8 +7,8 @@ import {
   watch,
 } from "vue"
 import type { Component } from "vue"
-import { getPresetById, morphPresets } from "./morph/presets"
-import type { MorphAsset } from "./morph/types"
+import { getPresetById, morphPresets } from "@musistudio/lucide-morph/morph/presets"
+import type { MorphAsset } from "@musistudio/lucide-morph/morph/types"
 import {
   getMorphIconFrames,
   getViewBoxCenter,
@@ -19,16 +19,23 @@ import {
   targetPositionForState,
   type MorphIconPreset,
   type MorphIconState,
-} from "./runtime/morph"
+} from "@musistudio/lucide-morph/runtime/morph"
 
-export { cloneAsset, getPresetById, morphPresets } from "./morph/presets"
+export {
+  cloneAsset,
+  getPresetById,
+  morphPresets,
+} from "@musistudio/lucide-morph/morph/presets"
 export type {
   MorphAsset,
   MorphLayer,
   MorphLayerMode,
   MorphLoadingDesign,
-} from "./morph/types"
-export type { MorphIconPreset, MorphIconState } from "./runtime/morph"
+} from "@musistudio/lucide-morph/morph/types"
+export type {
+  MorphIconPreset,
+  MorphIconState,
+} from "@musistudio/lucide-morph/runtime/morph"
 
 type MorphIconVueProps = {
   active?: boolean

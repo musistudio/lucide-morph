@@ -1,0 +1,29 @@
+{
+  "name": "@musistudio/lucide-morph-vue",
+  "version": "1.0.0",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@musistudio/lucide-morph": "1.0.0"
+  },
+  "peerDependencies": {
+    "vue": ">=3.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

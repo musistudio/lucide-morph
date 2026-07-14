@@ -2,7 +2,12 @@ import type { EditorSettings, MorphAsset } from "./types"
 
 export type ExportTarget = "react" | "vue" | "web-component"
 
-export const npmPackageName = "@musistudio/lucide-morph"
+export const npmPackageNames: Record<ExportTarget | "core", string> = {
+  core: "@musistudio/lucide-morph",
+  react: "@musistudio/lucide-morph-react",
+  vue: "@musistudio/lucide-morph-vue",
+  "web-component": "@musistudio/lucide-morph-webcomponent",
+}
 
 export const exportTargets: Array<{
   value: ExportTarget
@@ -55,7 +60,7 @@ export function generateNpmReactUsageCode(
 ) {
   const componentName = normalizeComponentName(settings.componentName, asset)
 
-  return `import { MorphIcon } from "${npmPackageName}/react"
+  return `import { MorphIcon } from "${npmPackageNames.react}"
 
 export function ${componentName}({ active = false }: { active?: boolean }) {
   return (
@@ -89,7 +94,7 @@ export function generateNpmVueUsageCode(
 
   return `<!-- ${componentName}.vue -->
 <script setup lang="ts">
-import { MorphIcon } from "${npmPackageName}/vue"
+import { MorphIcon } from "${npmPackageNames.vue}"
 
 const props = withDefaults(defineProps<{ active?: boolean }>(), {
   active: false,
@@ -116,7 +121,7 @@ export function generateNpmWebComponentUsageCode(
 ) {
   const componentName = normalizeComponentName(settings.componentName, asset)
 
-  return `import { defineMorphIconElement } from "${npmPackageName}/webcomponent"
+  return `import { defineMorphIconElement } from "${npmPackageNames["web-component"]}"
 
 defineMorphIconElement()
 
