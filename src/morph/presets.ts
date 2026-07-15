@@ -1,5 +1,6 @@
 import { applyPresetEndpointDesign } from "./presetEndpoints"
 import { applyPresetSceneDesign } from "./presetScenes"
+import { additionalPresetDefinitions } from "./additionalPresetDefinitions"
 import type { MorphAsset } from "./types"
 
 type PresetSeed = Omit<MorphAsset, "layers" | "loading">
@@ -707,6 +708,10 @@ const presetSeeds: PresetSeed[] = [
     toIcon: "CirclePlay",
     viewBox: "0 0 24 24",
   },
+  ...additionalPresetDefinitions.map(({ loadingLabel: _loadingLabel, ...seed }) => ({
+    ...seed,
+    viewBox: "0 0 24 24",
+  })),
 ]
 
 export const morphPresets: MorphAsset[] = presetSeeds.map((seed) =>

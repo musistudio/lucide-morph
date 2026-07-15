@@ -1,4 +1,5 @@
 import type { MorphAsset, MorphLayer } from "./types"
+import { buildAdditionalPresetEndpointLayers } from "./additionalPresetEndpoints"
 import {
   collapsedLucidePath,
   joinLucidePaths,
@@ -1980,7 +1981,8 @@ const endpointPresets: Record<string, EndpointLayer[]> = {
 }
 
 export function applyPresetEndpointDesign(asset: MorphAsset): MorphAsset {
-  const layers = endpointPresets[asset.id]
+  const layers =
+    endpointPresets[asset.id] ?? buildAdditionalPresetEndpointLayers(asset)
   if (!layers) throw new Error(`Missing Lucide endpoint design for ${asset.id}.`)
 
   return {

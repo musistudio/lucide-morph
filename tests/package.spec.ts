@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises"
 import path from "node:path"
+import { pathToFileURL } from "node:url"
 import { expect, test } from "@playwright/test"
 
 const workspaceRoot = process.cwd()
@@ -35,17 +36,17 @@ test("publishes separated package dependency metadata", async () => {
   expect(core.peerDependencies).toBeUndefined()
 
   expect(react.dependencies).toEqual({
-    "@musistudio/lucide-morph": "1.0.0",
+    "@musistudio/lucide-morph": "1.0.1",
   })
   expect(react.peerDependencies).toEqual({ react: ">=18" })
 
   expect(vue.dependencies).toEqual({
-    "@musistudio/lucide-morph": "1.0.0",
+    "@musistudio/lucide-morph": "1.0.1",
   })
   expect(vue.peerDependencies).toEqual({ vue: ">=3.3" })
 
   expect(webComponent.dependencies).toEqual({
-    "@musistudio/lucide-morph": "1.0.0",
+    "@musistudio/lucide-morph": "1.0.1",
   })
   expect(webComponent.peerDependencies).toBeUndefined()
 })
@@ -84,6 +85,71 @@ test("builds tree-shakeable framework package outputs", async () => {
   expect(webComponentEntry).not.toContain('from "vue"')
 })
 
+test("ships an explicit layer design for every additional preset", async () => {
+  const coreUrl = pathToFileURL(
+    path.join(workspaceRoot, "packages/core/dist/index.js"),
+  ).href
+  const designsUrl = pathToFileURL(
+    path.join(
+      workspaceRoot,
+      "packages/core/dist/morph/additionalPresetDesigns.js",
+    ),
+  ).href
+  const definitionsUrl = pathToFileURL(
+    path.join(
+      workspaceRoot,
+      "packages/core/dist/morph/additionalPresetDefinitions.js",
+    ),
+  ).href
+  const { morphPresets } = (await import(coreUrl)) as typeof import("../src")
+  const { additionalPresetDesigns } = (await import(
+    designsUrl
+  )) as typeof import("../src/morph/additionalPresetDesigns")
+  const { additionalPresetDefinitions } = (await import(
+    definitionsUrl
+  )) as typeof import("../src/morph/additionalPresetDefinitions")
+  const additionalPresets = morphPresets.slice(78)
+  const interleavedTail = additionalPresetDefinitions.slice(-20)
+
+  expect(additionalPresets).toHaveLength(100)
+  expect(additionalPresetDefinitions).toHaveLength(100)
+  expect(Object.keys(additionalPresetDesigns)).toHaveLength(100)
+  expect(Object.keys(additionalPresetDesigns).sort()).toEqual(
+    additionalPresets.map((preset) => preset.id).sort(),
+  )
+  for (const design of Object.values(additionalPresetDesigns)) {
+    const arcs = design.layers
+      .map((layer) => layer.loading)
+      .filter((loading) => loading.kind === "arc")
+      .sort((first, second) => first.start - second.start)
+    let cursor = 0
+    for (const arc of arcs) {
+      expect(arc.start).toBe(cursor)
+      expect(arc.end).toBeGreaterThan(arc.start)
+      cursor = arc.end
+    }
+    expect(cursor).toBe(288)
+  }
+  expect(
+    additionalPresets.every((preset) =>
+      preset.layers.every(
+        (layer) =>
+          !layer.id.startsWith("semantic-layer-") &&
+          Boolean(layer.from && layer.loading && layer.to),
+      ),
+    ),
+  ).toBe(true)
+  expect(
+    interleavedTail.every((preset) => !preset.toIcon.endsWith("Check")),
+  ).toBe(true)
+  expect(
+    new Set(interleavedTail.map((preset) => preset.toIcon)).size,
+  ).toBeGreaterThanOrEqual(18)
+  expect(
+    interleavedTail.every((preset) => !preset.name.includes("Delivered Package")),
+  ).toBe(true)
+})
+
 test.describe("published npm package entries", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/tests/fixtures/package.html")
@@ -100,7 +166,7 @@ test.describe("published npm package entries", () => {
 
     expect(parsed.firstPresetId).toBe("menu-x")
     expect(parsed.menuPresetName).toBe("Menu to X")
-    expect(parsed.presetCount).toBeGreaterThan(70)
+    expect(parsed.presetCount).toBe(178)
   })
 
   test("renders and updates the React package component", async ({ page }) => {

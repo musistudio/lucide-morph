@@ -192,6 +192,7 @@ export function lucidePath(path: string) {
   let command = ""
   let current: Point = { x: 0, y: 0 }
   let activeSubpath: CubicSubpath | undefined
+  let previousCubicControl: Point | undefined
 
   const hasNumber = () =>
     index < tokens.length && !commandRE.test(tokens[index] ?? "")
@@ -227,6 +228,7 @@ export function lucidePath(path: string) {
     const relative = command !== upper
 
     if (upper === "M") {
+      previousCubicControl = undefined
       current = readPoint(relative)
       activeSubpath = { start: current, segments: [] }
       subpaths.push(activeSubpath)
@@ -241,6 +243,7 @@ export function lucidePath(path: string) {
     if (!activeSubpath) throw new Error("Lucide path must begin with M.")
 
     if (upper === "L") {
+      previousCubicControl = undefined
       while (hasNumber()) {
         const end = readPoint(relative)
         appendSegment(lineAsCubic(current, end))
@@ -249,6 +252,7 @@ export function lucidePath(path: string) {
     }
 
     if (upper === "H") {
+      previousCubicControl = undefined
       while (hasNumber()) {
         const x = readNumber()
         const end = { x: relative ? current.x + x : x, y: current.y }
@@ -258,6 +262,7 @@ export function lucidePath(path: string) {
     }
 
     if (upper === "V") {
+      previousCubicControl = undefined
       while (hasNumber()) {
         const y = readNumber()
         const end = { x: current.x, y: relative ? current.y + y : y }
@@ -272,11 +277,29 @@ export function lucidePath(path: string) {
         const p2 = readPoint(relative)
         const p3 = readPoint(relative)
         appendSegment({ p0: current, p1, p2, p3 })
+        previousCubicControl = p2
+      }
+      continue
+    }
+
+    if (upper === "S") {
+      while (hasNumber()) {
+        const p1 = previousCubicControl
+          ? {
+              x: current.x * 2 - previousCubicControl.x,
+              y: current.y * 2 - previousCubicControl.y,
+            }
+          : current
+        const p2 = readPoint(relative)
+        const p3 = readPoint(relative)
+        appendSegment({ p0: current, p1, p2, p3 })
+        previousCubicControl = p2
       }
       continue
     }
 
     if (upper === "A") {
+      previousCubicControl = undefined
       while (hasNumber()) {
         const rx = readNumber()
         const ry = readNumber()
@@ -299,6 +322,7 @@ export function lucidePath(path: string) {
     }
 
     if (upper === "Z") {
+      previousCubicControl = undefined
       if (!samePoint(current, activeSubpath.start)) {
         appendSegment(lineAsCubic(current, activeSubpath.start))
       }

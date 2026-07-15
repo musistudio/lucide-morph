@@ -1,14 +1,15 @@
 # Lucide Morph
 
-Lucide Morph is a Vite + React editor and npm package for animated SVG icon
-transitions. It includes preset morphs, Lucide icon pairing, SVG upload support,
-and framework-ready runtime packages for React, Vue, and Web Components.
+Lucide Morph is a Vite + React editor and npm package for semantic SVG icon
+state transitions. It includes preset morphs, Lucide icon pairing, SVG upload
+support, and framework-ready runtime packages for React, Vue, and Web Components.
 
 ## Features
 
-- Preview icon morph animations with editable duration, size, stroke width, and color.
+- Preview icon state changes with editable duration, size, stroke width, and color.
 - Preview async `from → loading → to` flows with a configurable loading hold.
-- Start from 78 built-in Lucide-only presets with From → Loading → To transitions.
+- Start from 178 built-in Lucide-only presets with semantic From → Loading → To transitions.
+- Every built-in preset has an explicit layer mapping and loading choreography.
 - Pair Lucide icons or upload custom SVGs.
 - Install the runtime package that matches React, Vue, or Web Components while
   sharing the same preset core.

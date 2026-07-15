@@ -1,6 +1,6 @@
 {
   "name": "@musistudio/lucide-morph-react",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -18,7 +18,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@musistudio/lucide-morph": "1.0.0"
+    "@musistudio/lucide-morph": "1.0.1"
   },
   "peerDependencies": {
     "react": ">=18"

@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type CSSProperties,
   type ReactNode,
 } from "react"
 import {
@@ -704,6 +705,8 @@ export default function App() {
   const [heroExportTarget, setHeroExportTarget] =
     useState<ExportTarget>("react")
   const [heroCopyTarget, setHeroCopyTarget] = useState<ExportTarget | null>(null)
+  const [heroInstallCopyTarget, setHeroInstallCopyTarget] =
+    useState<ExportTarget | null>(null)
   const [iconSearch, setIconSearch] = useState("")
   const [presetSearch, setPresetSearch] = useState("")
   const [iconPickerTarget, setIconPickerTarget] =
@@ -796,6 +799,10 @@ export default function App() {
   const heroExportLabel =
     exportTargets.find((option) => option.value === heroExportTarget)?.label ??
     "React"
+  const heroExportIndex = Math.max(
+    exportTargets.findIndex((option) => option.value === heroExportTarget),
+    0,
+  )
 
   function updateDuration(value: number) {
     const duration = normalizeDuration(value)
@@ -1114,6 +1121,18 @@ export default function App() {
     }, 1200)
   }
 
+  async function copyHeroInstallCommand() {
+    const target = heroExportTarget
+
+    await writeClipboardText(npmInstallCommands[target])
+    setHeroInstallCopyTarget(target)
+    window.setTimeout(() => {
+      setHeroInstallCopyTarget((current) =>
+        current === target ? null : current,
+      )
+    }, 1200)
+  }
+
   return (
     <div className="min-h-screen bg-[#FFF7ED] text-zinc-950">
       <input
@@ -1142,7 +1161,7 @@ export default function App() {
                 lucide-morph
               </h1>
               <p className="truncate text-xs text-zinc-500">
-                animated SVG icon previews
+                semantic icon state transitions
               </p>
             </div>
           </div>
@@ -1159,23 +1178,23 @@ export default function App() {
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-14 sm:py-18 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
             <div className="max-w-3xl text-left">
               <h2
-                aria-label="Shape motion. Ship icons."
+                aria-label="Show change. Ship clarity."
                 className="text-[clamp(3rem,7.4vw,6.8rem)] font-semibold leading-[0.9] tracking-[-0.045em] text-slate-950"
               >
-                <span className="block">Shape motion.</span>
+                <span className="block">Show change.</span>
                 <span className="block bg-gradient-to-r from-[#FF5B00] via-[#FF8A1F] to-[#7A2E00] bg-clip-text text-transparent">
-                  Ship icons.
+                  Ship clarity.
                 </span>
               </h2>
 
               <p className="mt-7 max-w-2xl text-balance text-base leading-7 text-slate-600 sm:text-lg">
-                Build, inspect, and export SVG path transitions from one compact
-                workspace—complete with timing controls, loading states, and
-                reusable component output.
+                Build, inspect, and export SVG path transitions between two
+                product states—complete with meaningful loading states, timing
+                controls, and reusable component output.
               </p>
 
               <div className="mt-7 flex flex-wrap gap-2">
-                <Badge tone="accent">Path timeline</Badge>
+                <Badge tone="accent">Semantic state pairs</Badge>
                 <Badge tone="neutral">{morphPresets.length} presets</Badge>
                 <Badge tone="neutral">React · Vue · Web Component</Badge>
               </div>
@@ -1201,10 +1220,19 @@ export default function App() {
 
                 <div className="p-4 sm:p-5">
                   <div
-                    className="grid grid-cols-3 gap-1 rounded-lg border border-white/10 bg-white/[0.04] p-1"
+                    className="hero-framework-tabs relative grid h-8 grid-cols-3 rounded-lg border border-white/10 bg-white/[0.045] p-0.5"
+                    style={
+                      {
+                        "--hero-tab-index": heroExportIndex,
+                      } as CSSProperties
+                    }
                     role="group"
                     aria-label="Code framework"
                   >
+                    <span
+                      className="hero-framework-tab-indicator"
+                      aria-hidden="true"
+                    />
                     {exportTargets.map((option) => (
                       <button
                         key={option.value}
@@ -1212,10 +1240,10 @@ export default function App() {
                         aria-pressed={heroExportTarget === option.value}
                         onClick={() => setHeroExportTarget(option.value)}
                         className={cn(
-                          "rounded-md px-2 py-2 text-[11px] font-medium transition-all sm:text-xs",
+                          "relative z-10 grid h-full place-items-center whitespace-nowrap rounded-md px-1.5 py-0 text-[10px] font-medium leading-none transition-colors sm:text-[11px]",
                           heroExportTarget === option.value
-                            ? "bg-white text-slate-950 shadow-[0_6px_20px_rgba(0,0,0,0.28)]"
-                            : "text-zinc-500 hover:bg-white/[0.06] hover:text-zinc-200",
+                            ? "text-slate-950"
+                            : "text-zinc-500 hover:text-zinc-200",
                         )}
                       >
                         {option.label}
@@ -1228,17 +1256,29 @@ export default function App() {
                       <span className="text-xs font-medium text-zinc-300">
                         Install for {heroExportLabel}
                       </span>
-                      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#FF8A1F]">
-                        terminal
-                      </span>
+                      <button
+                        type="button"
+                        onClick={copyHeroInstallCommand}
+                        aria-label={`Copy ${heroExportLabel} install command`}
+                        title={`Copy ${heroExportLabel} install command`}
+                        className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-white/10 text-[#FF8A1F] transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF8A1F]/40"
+                      >
+                        {heroInstallCopyTarget === heroExportTarget ? (
+                          <Check className="h-3.5 w-3.5" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </button>
                     </div>
-                    <div className="flex items-start gap-3 rounded-lg border border-white/10 bg-black/45 px-3 py-3.5 font-mono text-xs leading-5 sm:text-sm">
-                      <span className="select-none text-[#FF6B16]" aria-hidden="true">
+                    <div className="flex h-12 items-center gap-3 overflow-hidden rounded-lg border border-white/10 bg-black/45 px-3 font-mono text-xs leading-none sm:text-sm">
+                      <span className="shrink-0 select-none text-[#FF6B16]" aria-hidden="true">
                         $
                       </span>
-                      <code className="min-w-0 break-words text-zinc-200">
-                        {npmInstallCommands[heroExportTarget]}
-                      </code>
+                      <div className="hero-install-command code-scroll flex min-w-0 flex-1 items-center overflow-x-auto overflow-y-hidden">
+                        <code className="min-w-max whitespace-nowrap text-zinc-200">
+                          {npmInstallCommands[heroExportTarget]}
+                        </code>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1548,10 +1588,10 @@ export default function App() {
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-2xl font-normal tracking-normal text-zinc-950">
-                animated preset gallery
+                state transition preset gallery
               </h2>
               <p className="mt-1 text-sm text-zinc-500">
-                {filteredPresets.length} visible morphs
+                {filteredPresets.length} visible state pairs
               </p>
             </div>
             <div className="relative w-full sm:w-72">

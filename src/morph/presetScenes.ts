@@ -1,4 +1,6 @@
 import type { MorphAsset, MorphLayer } from "./types"
+import { additionalPresetDefinitions } from "./additionalPresetDefinitions"
+import { additionalPresetDesigns } from "./additionalPresetDesigns"
 
 type Point = {
   x: number
@@ -1156,6 +1158,46 @@ const presetScenes: Record<string, PresetScene> = {
   ),
 }
 
+const additionalPresetDefinitionById = new Map(
+  additionalPresetDefinitions.map((definition) => [definition.id, definition]),
+)
+
+function createManualAdditionalPresetScene(asset: MorphAsset) {
+  const definition = additionalPresetDefinitionById.get(asset.id)
+  if (!definition) return undefined
+
+  const design = additionalPresetDesigns[asset.id]
+  if (!design) throw new Error(`Missing manual scene design for ${asset.id}.`)
+
+  return {
+    label: definition.loadingLabel,
+    rotationDirection: design.rotationDirection,
+    rotationDuration: design.rotationDuration,
+    layers: Object.fromEntries(
+      design.layers.map((manualLayer) => {
+        const loading = manualLayer.loading
+        return [
+          manualLayer.id,
+          loading.kind === "arc"
+            ? {
+                loading: loaderArc(
+                  loading.start,
+                  loading.end,
+                  Math.max(1, Math.ceil((loading.end - loading.start) / 90)),
+                  loading.radius,
+                ),
+                loadingOpacity: 1,
+              }
+            : {
+                loading: collapsedAt({ x: loading.x, y: loading.y }, 1),
+                loadingOpacity: 0,
+              },
+        ]
+      }),
+    ),
+  } satisfies PresetScene
+}
+
 function applyLayerScene(layer: MorphLayer, scene: LayerScene): MorphLayer {
   let paths
   try {
@@ -1175,7 +1217,8 @@ function applyLayerScene(layer: MorphLayer, scene: LayerScene): MorphLayer {
 }
 
 export function applyPresetSceneDesign(asset: MorphAsset): MorphAsset {
-  const scene = presetScenes[asset.id]
+  const scene =
+    presetScenes[asset.id] ?? createManualAdditionalPresetScene(asset)
   if (!scene) {
     throw new Error(`Missing scene design for ${asset.id}.`)
   }
