@@ -197,7 +197,7 @@ async function play() {
 
 ## Examples
 
-- [Live demo on GitHub Pages](https://musistudio.github.io/Lucide-Morph/)
+- [Live demo on GitHub Pages](https://musistudio.github.io/lucide-morph/)
 
 ## Getting Started
 
